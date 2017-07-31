@@ -15,5 +15,38 @@ public class DownloadEvent {
     public long speed;
     public long totalSize;
     public long currentSize;
+    public Exception exception;
 
+
+    @Override
+    public String toString() {
+        return "DownloadEvent{" +
+                "status=" + getStatus(status) +
+                ", speed=" + speed +
+                ", totalSize=" + totalSize +
+                ", currentSize=" + currentSize +
+                ", exception=" + exception +
+                '}';
+    }
+
+    public static String getStatus(int status) {
+        switch (status) {
+            case WAIT:
+                return "等待";
+
+            case DOWNLOADING:
+                return "下载中";
+
+            case PAUSE:
+                return "暂停";
+
+            case FINISH:
+                return "完成";
+
+            case ERROR:
+                return "错误";
+
+        }
+        return "未知";
+    }
 }
