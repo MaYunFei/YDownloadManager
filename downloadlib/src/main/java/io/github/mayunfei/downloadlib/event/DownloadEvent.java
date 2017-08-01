@@ -10,6 +10,7 @@ public class DownloadEvent {
     public static final int PAUSE = 2;
     public static final int FINISH = 3;
     public static final int ERROR = 4;
+    public static final int CANCEL = 5;
 
     public int status = WAIT;
     public long speed;
@@ -22,7 +23,7 @@ public class DownloadEvent {
     public String toString() {
         return "DownloadEvent{" +
                 "status=" + getStatus(status) +
-                ", speed=" + speed +
+                ", speed=" + getSpeed(speed) +
                 ", totalSize=" + totalSize +
                 ", currentSize=" + currentSize +
                 ", exception=" + exception +
@@ -46,7 +47,23 @@ public class DownloadEvent {
             case ERROR:
                 return "错误";
 
+            case CANCEL:
+                return "取消";
+
         }
         return "未知";
+    }
+
+    /**
+     * @param speed 每毫秒字节 byte/ms
+     * @return kb/s m/s
+     */
+    public static String getSpeed(long speed) {
+        long kbs = speed * 1000 / 1024;
+        if (kbs < 1024) {
+            return kbs + "kb/s";
+        } else {
+            return kbs / 1024 + "m/s";
+        }
     }
 }

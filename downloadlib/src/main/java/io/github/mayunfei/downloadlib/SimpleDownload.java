@@ -8,11 +8,13 @@ import java.io.IOException;
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
 import io.github.mayunfei.downloadlib.progress.ProgressListener;
 import io.github.mayunfei.downloadlib.progress.ProgressResponseBody;
+import io.github.mayunfei.downloadlib.task.DownloadEntity;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.processors.BehaviorProcessor;
 import io.reactivex.processors.FlowableProcessor;
+import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -28,32 +30,26 @@ import okio.Okio;
 public class SimpleDownload implements ProgressListener {
 
     private final BehaviorProcessor<DownloadEvent> downloadProcessor;
-    private String url;
-    private String path;
-    private String name;
+    private DownloadEntity downloadEntity;
     private OkHttpClient httpClient;
     private Call call;
     private DownloadEvent event;
 
-
     //计算速度
-    long lastRefreshTime = 0L;
-    long lastBytesWritten = 0L;
-    int minTime = 100;//最小回调时间100ms，避免频繁回调
+    private long lastRefreshTime = 0L;
+    private long lastBytesWritten = 0L;
+    private int minTime = 100;//最小回调时间100ms，避免频繁回调
 
-    SimpleDownload(String url, String path, String name) {
-        this.url = url;
-        this.path = path;
-        this.name = name;
+    SimpleDownload(DownloadEntity downloadEntity) {
+        this.downloadEntity = downloadEntity;
         httpClient = DownloadManager.getInstance().getOkHttpClient();
         downloadProcessor = BehaviorProcessor.create();
-        downloadProcessor.subscribeOn(AndroidSchedulers.mainThread());
         event = new DownloadEvent();
     }
 
     public Flowable<DownloadEvent> start() {
 
-        Request request = new Request.Builder().url(url).build();
+        Request request = new Request.Builder().url(downloadEntity.getUrl()).build();
 
         call = httpClient.newCall(request);
         call.enqueue(new Callback() {
@@ -67,7 +63,7 @@ public class SimpleDownload implements ProgressListener {
             @Override
             public void onResponse(Call call, okhttp3.Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    File downloadedFile = new File(path, name);
+                    File downloadedFile = new File(downloadEntity.getPath(), downloadEntity.getName());
                     BufferedSink sink = Okio.buffer(Okio.sink(downloadedFile));
                     sink.writeAll(new ProgressResponseBody(response.body(), SimpleDownload.this).source());
                     sink.close();
@@ -80,7 +76,7 @@ public class SimpleDownload implements ProgressListener {
         PublishSubject<DownloadEvent> publishSubject = PublishSubject.create();
 
 
-        return downloadProcessor.onBackpressureLatest();
+        return downloadProcessor.observeOn(AndroidSchedulers.mainThread()).onBackpressureLatest().observeOn(AndroidSchedulers.mainThread()).onBackpressureLatest();
     }
 
 
