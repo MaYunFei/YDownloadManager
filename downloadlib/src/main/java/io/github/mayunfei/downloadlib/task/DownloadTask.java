@@ -1,67 +1,60 @@
 package io.github.mayunfei.downloadlib.task;
 
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
+import io.github.mayunfei.downloadlib.observer.DataChanger;
 import io.github.mayunfei.downloadlib.observer.DownloadProcessor;
 import io.reactivex.processors.FlowableProcessor;
-import okhttp3.ResponseBody;
-import retrofit2.Response;
 
 /**
  * Created by mayunfei on 17-7-26.
  */
 
-public class DownloadTask implements Runnable{
-    private DownloadEntity downloadEntity;
+public class DownloadTask implements Runnable, IDownloadTask {
+    private DownloadEntity entity;
     private volatile boolean isPause;
     private volatile boolean isCancel;
-    private DownloadEvent downloadEvent;
 
-    public DownloadTask(DownloadEntity downloadEntity) {
-        this.downloadEntity = downloadEntity;
+    public DownloadTask(DownloadEntity entity) {
+        this.entity = entity;
     }
 
-    void start() {
-        FlowableProcessor<DownloadEvent> processor = DownloadProcessor.getInstance().getDownloadProcessor(downloadEntity.getKey());
+    @Override
+    public void start() {
+//        FlowableProcessor<DownloadEvent> processor = DownloadProcessor.getInstance().getDownloadProcessor(entity.getKey());
 
-        downloadEntity.status = DownloadEvent.DOWNLOADING;
-        downloadEntity.totalSize = 1024 * 5;
-        for (int i = 0; i < downloadEntity.totalSize; i++) {
+        entity.status = DownloadEvent.DOWNLOADING;
+        entity.totalSize = 1024 * 5;
+        for (int i = 0; i < entity.totalSize; i++) {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            if (isPause || isCancel){
-                downloadEntity.status = isPause?DownloadEvent.PAUSE:DownloadEvent.CANCEL;
+            if (isPause || isCancel) {
+                entity.status = isPause ? DownloadEvent.PAUSE : DownloadEvent.CANCEL;
 
                 return;
             }
 
-            downloadEntity.currentSize = i += 1024;
-            processor.onNext(getDownloadEvent());
+            entity.currentSize = i += 1024;
+            DataChanger.getInstance().postDownloadStatus(entity);
+//            processor.onNext(getDownloadEvent());
         }
-        downloadEntity.status = DownloadEvent.FINISH;
-        processor.onNext(getDownloadEvent());
+        entity.status = DownloadEvent.FINISH;
+        DataChanger.getInstance().postDownloadStatus(entity);
+//        processor.onNext(getDownloadEvent());
 
 
     }
 
-    private DownloadEvent getDownloadEvent() {
-        if (downloadEvent == null) {
-            downloadEvent = new DownloadEvent();
-        }
-        downloadEvent.totalSize = downloadEntity.totalSize;
-        downloadEvent.currentSize = downloadEntity.currentSize;
-        downloadEvent.status = downloadEntity.status;
-        return downloadEvent;
-    }
 
-
-    void pause() {
+    @Override
+    public void pause() {
         isPause = true;
     }
 
-    void cancel() {
+    @Override
+    public void cancel() {
         isCancel = true;
     }
 

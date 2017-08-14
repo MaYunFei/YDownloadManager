@@ -5,12 +5,10 @@ import android.content.Intent;
 
 import java.util.concurrent.TimeUnit;
 
-import io.github.mayunfei.downloadlib.event.DownloadEvent;
-import io.github.mayunfei.downloadlib.observer.DownloadProcessor;
+import io.github.mayunfei.downloadlib.observer.DataChanger;
+import io.github.mayunfei.downloadlib.observer.DataWatcher;
 import io.github.mayunfei.downloadlib.task.DownloadEntity;
-import io.github.mayunfei.downloadlib.task.DownloadService;
 import io.github.mayunfei.downloadlib.utils.Constants;
-import io.reactivex.Flowable;
 import okhttp3.OkHttpClient;
 
 /**
@@ -21,11 +19,12 @@ import okhttp3.OkHttpClient;
 public class DownloadManager {
     private static DownloadManager INSTANCE;
     private OkHttpClient okHttpClient;
+    private Context context;
 
     private DownloadManager() {
     }
 
-    public synchronized static void init() {
+    public synchronized static void init(Context context) {
         if (INSTANCE == null) {
             INSTANCE = new DownloadManager();
         }
@@ -34,13 +33,15 @@ public class DownloadManager {
                 .writeTimeout(Constants.TIME, TimeUnit.MILLISECONDS)
                 .readTimeout(Constants.TIME, TimeUnit.MILLISECONDS)
                 .build();
+        INSTANCE.context = context.getApplicationContext();
     }
 
-    public synchronized static void init(OkHttpClient okHttpClient) {
+    public synchronized static void init(Context context,OkHttpClient okHttpClient) {
         if (INSTANCE == null) {
             INSTANCE = new DownloadManager();
         }
         INSTANCE.okHttpClient = okHttpClient;
+        INSTANCE.context = context.getApplicationContext();
     }
 
     public static DownloadManager getInstance() {
@@ -59,17 +60,45 @@ public class DownloadManager {
     }
 
 
-    public void add(Context context, DownloadEntity downloadEntity) {
+    public void add( DownloadEntity downloadEntity) {
         Intent intent = new Intent(context, DownloadService.class);
         intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity);
         intent.putExtra(Constants.ACTION, Constants.ACTION_ADD);
+        context.startService(intent);
+    }
+    public void pause( DownloadEntity downloadEntity) {
+        Intent intent = new Intent(context, DownloadService.class);
+        intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity);
+        intent.putExtra(Constants.ACTION, Constants.ACTION_PAUSE);
+        context.startService(intent);
+    }
+
+    public void cancel( DownloadEntity downloadEntity) {
+        Intent intent = new Intent(context, DownloadService.class);
+        intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity);
+        intent.putExtra(Constants.ACTION, Constants.ACTION_CANCEL);
+        context.startService(intent);
+    }
+    public void resume( DownloadEntity downloadEntity) {
+        Intent intent = new Intent(context, DownloadService.class);
+        intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity);
+        intent.putExtra(Constants.ACTION, Constants.ACTION_RESUME);
         context.startService(intent);
     }
 
 
 
 
-    public Flowable<DownloadEvent> getDownloadProcessor(String key) {
-        return DownloadProcessor.getInstance().getDownloadProcessor(key).onBackpressureLatest();
+
+//    public Flowable<DownloadEvent> getDownloadProcessor(String key) {
+//        return DownloadProcessor.getInstance().getDownloadProcessor(key).onBackpressureLatest();
+//    }
+
+    public void addObserver(DataWatcher dataWatcher){
+        DataChanger.getInstance().addObserver(dataWatcher);
+    }
+
+    public void delectObserver(DataWatcher dataWatcher){
+        DataChanger.getInstance().deleteObserver(dataWatcher);
     }
 }

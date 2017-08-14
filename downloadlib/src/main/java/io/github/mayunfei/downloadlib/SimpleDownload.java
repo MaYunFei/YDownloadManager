@@ -57,7 +57,7 @@ public class SimpleDownload implements ProgressListener {
             public void onFailure(Call call, IOException e) {
                 //TODO event 需要工厂模式
                 //删除文件
-                error(e);
+//                error(e);
             }
 
             @Override
@@ -87,46 +87,46 @@ public class SimpleDownload implements ProgressListener {
     @Override
     public void update(long bytesRead, long contentLength, boolean done) {
 
-        if (bytesRead == -1 && contentLength == -1) {
-            //长度问题
-            return;
-        }
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastRefreshTime >= minTime || bytesRead == contentLength || done) {
-            long intervalTime = (currentTime - lastRefreshTime);
-            if (intervalTime == 0) {
-                intervalTime += 1;
-            }
-            long updateBytes = bytesRead - lastBytesWritten;
-            final long networkSpeed = updateBytes / intervalTime;
-            update(bytesRead, contentLength, networkSpeed);
-            lastRefreshTime = System.currentTimeMillis();
-            lastBytesWritten = bytesRead;
-        }
-        if (bytesRead == contentLength && done) {
-            finished(bytesRead, contentLength);
-        }
+//        if (bytesRead == -1 && contentLength == -1) {
+//            //长度问题
+//            return;
+//        }
+//        long currentTime = System.currentTimeMillis();
+//        if (currentTime - lastRefreshTime >= minTime || bytesRead == contentLength || done) {
+//            long intervalTime = (currentTime - lastRefreshTime);
+//            if (intervalTime == 0) {
+//                intervalTime += 1;
+//            }
+//            long updateBytes = bytesRead - lastBytesWritten;
+//            final long networkSpeed = updateBytes / intervalTime;
+//            update(bytesRead, contentLength, networkSpeed);
+//            lastRefreshTime = System.currentTimeMillis();
+//            lastBytesWritten = bytesRead;
+//        }
+//        if (bytesRead == contentLength && done) {
+//            finished(bytesRead, contentLength);
+//        }
     }
 
-    private void error(Exception e) {
-        event.status = DownloadEvent.ERROR;
-        event.exception = e;
-        downloadProcessor.onNext(event);
-    }
-
-    private void update(long bytesRead, long contentLength, long speed) {
-        event.status = DownloadEvent.DOWNLOADING;
-        event.totalSize = contentLength;
-        event.currentSize = bytesRead;
-        event.speed = speed;
-        downloadProcessor.onNext(event);
-    }
-
-    private void finished(long bytesRead, long contentLength) {
-        event.status = DownloadEvent.FINISH;
-        event.totalSize = contentLength;
-        event.currentSize = bytesRead;
-        downloadProcessor.onNext(event);
-    }
+//    private void error(Exception e) {
+//        event.status = DownloadEvent.ERROR;
+//        event.exception = e;
+//        downloadProcessor.onNext(event);
+//    }
+//
+//    private void update(long bytesRead, long contentLength, long speed) {
+//        event.status = DownloadEvent.DOWNLOADING;
+//        event.totalSize = contentLength;
+//        event.currentSize = bytesRead;
+//        event.speed = speed;
+//        downloadProcessor.onNext(event);
+//    }
+//
+//    private void finished(long bytesRead, long contentLength) {
+//        event.status = DownloadEvent.FINISH;
+//        event.totalSize = contentLength;
+//        event.currentSize = bytesRead;
+//        downloadProcessor.onNext(event);
+//    }
 
 }
