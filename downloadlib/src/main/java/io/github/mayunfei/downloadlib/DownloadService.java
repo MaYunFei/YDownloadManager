@@ -14,9 +14,12 @@ import java.util.concurrent.Executors;
 
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
 import io.github.mayunfei.downloadlib.observer.DataChanger;
+import io.github.mayunfei.downloadlib.task.BaseEntity;
 import io.github.mayunfei.downloadlib.task.DownloadEntity;
 import io.github.mayunfei.downloadlib.task.DownloadTask;
 import io.github.mayunfei.downloadlib.task.IDownloadTask;
+import io.github.mayunfei.downloadlib.task.MultiDownloadEntity;
+import io.github.mayunfei.downloadlib.task.MultiDownloadTask;
 import io.github.mayunfei.downloadlib.utils.Constants;
 
 /**
@@ -48,17 +51,17 @@ public class DownloadService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG,"onStartCommand");
         if (intent!=null){
-            DownloadEntity downloadEntity = (DownloadEntity) intent.getSerializableExtra(Constants.DOWNLOAD_ENTITY);
+            BaseEntity baseEntity = (BaseEntity) intent.getSerializableExtra(Constants.DOWNLOAD_ENTITY);
             int action = intent.getIntExtra(Constants.ACTION, -1);
-            doAction(action, downloadEntity);
+            doAction(action, baseEntity);
         }
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void doAction(int action, DownloadEntity entity) {
+    private void doAction(int action, BaseEntity entity) {
         switch (action) {
             case Constants.ACTION_ADD:
-                entity.status = DownloadEvent.DOWNLOADING;
+                entity.setStatus(DownloadEvent.DOWNLOADING);
                 DataChanger.getInstance().postDownloadStatus(entity);
                 add(entity);
                 break;
@@ -77,25 +80,32 @@ public class DownloadService extends Service {
         }
     }
 
-    private void cancel(DownloadEntity key) {
+    private void cancel(BaseEntity key) {
 //        DownloadTask task = taskHashMap.remove(key);
 //        if (task != null) {
 //            task.cancel();
 //        }
     }
 
-    private void pause(DownloadEntity entity) {
+    private void pause(BaseEntity entity) {
 //        DownloadTask task = taskHashMap.remove(key);
 //        if (task != null) {
 //            task.pause();
 //        }
     }
 
-    private void add(DownloadEntity downloadEntity) {
-        IDownloadTask task = taskHashMap.get(downloadEntity.getKey());
+    private void add(BaseEntity baseEntity) {
+        IDownloadTask task = taskHashMap.get(baseEntity.getKey());
         if (task == null) {
-            task = new DownloadTask(downloadEntity);
-                taskHashMap.put(downloadEntity.getKey(), task);
+            if (baseEntity instanceof  DownloadEntity){
+                task = new DownloadTask((DownloadEntity) baseEntity);
+                taskHashMap.put(baseEntity.getKey(), task);
+            }
+            if (baseEntity instanceof MultiDownloadEntity){
+                task = new MultiDownloadTask((MultiDownloadEntity) baseEntity);
+                taskHashMap.put(baseEntity.getKey(),task);
+            }
+
         }
 
         executor.submit(task);

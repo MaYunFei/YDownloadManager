@@ -20,7 +20,6 @@ public class DownloadTask implements Runnable, IDownloadTask {
 
     @Override
     public void start() {
-//        FlowableProcessor<DownloadEvent> processor = DownloadProcessor.getInstance().getDownloadProcessor(entity.getKey());
 
         entity.status = DownloadEvent.DOWNLOADING;
         entity.totalSize = 1024 * 5;
@@ -32,19 +31,15 @@ public class DownloadTask implements Runnable, IDownloadTask {
             }
             if (isPause || isCancel) {
                 entity.status = isPause ? DownloadEvent.PAUSE : DownloadEvent.CANCEL;
-
                 return;
             }
 
             entity.currentSize = i += 1024;
             DataChanger.getInstance().postDownloadStatus(entity);
-//            processor.onNext(getDownloadEvent());
         }
+
         entity.status = DownloadEvent.FINISH;
         DataChanger.getInstance().postDownloadStatus(entity);
-//        processor.onNext(getDownloadEvent());
-
-
     }
 
 

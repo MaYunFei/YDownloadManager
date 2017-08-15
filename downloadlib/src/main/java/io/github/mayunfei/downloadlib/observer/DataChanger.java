@@ -2,6 +2,7 @@ package io.github.mayunfei.downloadlib.observer;
 
 import java.util.Observable;
 
+import io.github.mayunfei.downloadlib.task.BaseEntity;
 import io.github.mayunfei.downloadlib.task.DownloadEntity;
 
 /**
@@ -23,7 +24,8 @@ public class DataChanger extends Observable {
         return instance;
     }
 
-    public void postDownloadStatus(DownloadEntity downloadEntity) {
+    public void postDownloadStatus(BaseEntity downloadEntity) {
+        setChanged();
         notifyObservers(downloadEntity);
     }
 

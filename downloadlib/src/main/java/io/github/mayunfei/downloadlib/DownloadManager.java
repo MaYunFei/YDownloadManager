@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.github.mayunfei.downloadlib.observer.DataChanger;
 import io.github.mayunfei.downloadlib.observer.DataWatcher;
+import io.github.mayunfei.downloadlib.task.BaseEntity;
 import io.github.mayunfei.downloadlib.task.DownloadEntity;
 import io.github.mayunfei.downloadlib.utils.Constants;
 import okhttp3.OkHttpClient;
@@ -36,7 +37,7 @@ public class DownloadManager {
         INSTANCE.context = context.getApplicationContext();
     }
 
-    public synchronized static void init(Context context,OkHttpClient okHttpClient) {
+    public synchronized static void init(Context context, OkHttpClient okHttpClient) {
         if (INSTANCE == null) {
             INSTANCE = new DownloadManager();
         }
@@ -60,26 +61,28 @@ public class DownloadManager {
     }
 
 
-    public void add( DownloadEntity downloadEntity) {
+    public void add(BaseEntity downloadEntity) {
         Intent intent = new Intent(context, DownloadService.class);
         intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity);
         intent.putExtra(Constants.ACTION, Constants.ACTION_ADD);
         context.startService(intent);
     }
-    public void pause( DownloadEntity downloadEntity) {
+
+    public void pause(BaseEntity downloadEntity) {
         Intent intent = new Intent(context, DownloadService.class);
         intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity);
         intent.putExtra(Constants.ACTION, Constants.ACTION_PAUSE);
         context.startService(intent);
     }
 
-    public void cancel( DownloadEntity downloadEntity) {
+    public void cancel(BaseEntity downloadEntity) {
         Intent intent = new Intent(context, DownloadService.class);
         intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity);
         intent.putExtra(Constants.ACTION, Constants.ACTION_CANCEL);
         context.startService(intent);
     }
-    public void resume( DownloadEntity downloadEntity) {
+
+    public void resume(BaseEntity downloadEntity) {
         Intent intent = new Intent(context, DownloadService.class);
         intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity);
         intent.putExtra(Constants.ACTION, Constants.ACTION_RESUME);
@@ -87,18 +90,15 @@ public class DownloadManager {
     }
 
 
-
-
-
 //    public Flowable<DownloadEvent> getDownloadProcessor(String key) {
 //        return DownloadProcessor.getInstance().getDownloadProcessor(key).onBackpressureLatest();
 //    }
 
-    public void addObserver(DataWatcher dataWatcher){
+    public void addObserver(DataWatcher dataWatcher) {
         DataChanger.getInstance().addObserver(dataWatcher);
     }
 
-    public void delectObserver(DataWatcher dataWatcher){
+    public void delectObserver(DataWatcher dataWatcher) {
         DataChanger.getInstance().deleteObserver(dataWatcher);
     }
 }
