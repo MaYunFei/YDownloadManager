@@ -119,7 +119,9 @@ public class DownloadService extends Service implements DownloadTask.DownloadTas
 //        if (task != null) {
 //            task.cancel();
 //        }
+        //取消清除
         IDownloadTask iDownloadTask = taskHashMap.remove(entity.getKey());
+
         if (iDownloadTask != null) {
             iDownloadTask.cancel();
         }else {
@@ -132,6 +134,7 @@ public class DownloadService extends Service implements DownloadTask.DownloadTas
 //        if (task != null) {
 //            task.pause();
 //        }
+        //暂停清除
         IDownloadTask iDownloadTask = taskHashMap.remove(entity.getKey());
         if (iDownloadTask != null) {
             iDownloadTask.pause();
@@ -185,6 +188,7 @@ public class DownloadService extends Service implements DownloadTask.DownloadTas
 
     @Override
     public void onFinish(BaseEntity entity) {
+        taskHashMap.remove(entity.getKey());
         DataChanger.getInstance().postDownloadStatus(entity);
         checkNext();
     }
