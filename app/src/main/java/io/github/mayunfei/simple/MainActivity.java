@@ -12,6 +12,7 @@ import io.github.mayunfei.downloadlib.DownloadManager;
 import io.github.mayunfei.downloadlib.SimpleDownload;
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
 import io.github.mayunfei.downloadlib.observer.DataWatcher;
+import io.github.mayunfei.downloadlib.task.BaseEntity;
 import io.github.mayunfei.downloadlib.task.DownloadEntity;
 import io.github.mayunfei.downloadlib.task.MultiDownloadEntity;
 import io.reactivex.annotations.NonNull;
@@ -21,9 +22,8 @@ import io.reactivex.functions.Consumer;
 public class MainActivity extends AppCompatActivity {
     DataWatcher watcher = new DataWatcher() {
         @Override
-        public void notifyUpdate(DownloadEntity data) {
-            Log.e("TAG",data.toString());
-            Log.e("ff","ffffffffffffffffffffffffffffffffffffffffffffffff");
+        public void notifyUpdate(BaseEntity data) {
+            Log.e("TAG ", "Thread = " + Thread.currentThread().getName() +"   "+ data.toString());
         }
     };
 
@@ -54,10 +54,10 @@ public class MainActivity extends AppCompatActivity {
 
 
         MultiDownloadEntity multiDownloadEntity = new MultiDownloadEntity("http://down.apps.sina.cn/sinasrc/f2/40/39e9780c0ab67c8494247515f6b540f2"
-        ,"helo",Environment.getExternalStorageDirectory().getAbsolutePath());
+                , "helo", Environment.getExternalStorageDirectory().getAbsolutePath());
         List<DownloadEntity> downloadEntities = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-            DownloadEntity entity = new DownloadEntity("url " + i,"name",Environment.getExternalStorageDirectory().getAbsolutePath());
+            DownloadEntity entity = new DownloadEntity("url " + i, "name", Environment.getExternalStorageDirectory().getAbsolutePath());
             downloadEntities.add(entity);
         }
         multiDownloadEntity.addAllEntity(downloadEntities);

@@ -2,8 +2,6 @@ package io.github.mayunfei.downloadlib.task;
 
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
 import io.github.mayunfei.downloadlib.observer.DataChanger;
-import io.github.mayunfei.downloadlib.observer.DownloadProcessor;
-import io.reactivex.processors.FlowableProcessor;
 
 /**
  * Created by mayunfei on 17-7-26.
@@ -13,9 +11,11 @@ public class DownloadTask implements Runnable, IDownloadTask {
     private DownloadEntity entity;
     private volatile boolean isPause;
     private volatile boolean isCancel;
+    private DownloadTaskListener downloadListener;
 
-    public DownloadTask(DownloadEntity entity) {
+    public DownloadTask(DownloadEntity entity, DownloadTaskListener onDownloadListener) {
         this.entity = entity;
+        this.downloadListener = onDownloadListener;
     }
 
     @Override
@@ -31,15 +31,22 @@ public class DownloadTask implements Runnable, IDownloadTask {
             }
             if (isPause || isCancel) {
                 entity.status = isPause ? DownloadEvent.PAUSE : DownloadEvent.CANCEL;
+                if(isPause){
+                    downloadListener.onPause(entity);
+                }else {
+                    downloadListener.onCancel(entity);
+                }
                 return;
             }
 
             entity.currentSize = i += 1024;
-            DataChanger.getInstance().postDownloadStatus(entity);
+            downloadListener.onUpdate(entity);
+//            DataChanger.getInstance().postDownloadStatus(entity);
         }
 
         entity.status = DownloadEvent.FINISH;
-        DataChanger.getInstance().postDownloadStatus(entity);
+        downloadListener.onFinish(entity);
+//        DataChanger.getInstance().postDownloadStatus(entity);
     }
 
 
@@ -56,5 +63,17 @@ public class DownloadTask implements Runnable, IDownloadTask {
     @Override
     public void run() {
         start();
+    }
+
+    public interface DownloadTaskListener {
+        void onUpdate(BaseEntity entity);
+
+        void onPause(BaseEntity entity);
+
+        void onCancel(BaseEntity entity);
+
+        void onFinish(BaseEntity entity);
+
+        void onError(BaseEntity entity);
     }
 }

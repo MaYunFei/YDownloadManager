@@ -20,6 +20,7 @@ public class MultiDownloadEntity extends BaseEntity implements Serializable{
 
     public void addAllEntity(Collection<DownloadEntity> entities){
         downloadEntities.addAll(entities);
+        totalSize = entities.size();
     }
 
 

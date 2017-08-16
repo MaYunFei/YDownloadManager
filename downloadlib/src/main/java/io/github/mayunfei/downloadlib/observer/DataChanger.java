@@ -1,5 +1,8 @@
 package io.github.mayunfei.downloadlib.observer;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import java.util.Observable;
 
 import io.github.mayunfei.downloadlib.task.BaseEntity;
@@ -12,9 +15,10 @@ import io.github.mayunfei.downloadlib.task.DownloadEntity;
 public class DataChanger extends Observable {
 
     private static DataChanger instance;
+    private Handler handler;
 
     private DataChanger() {
-
+        handler = new Handler(Looper.myLooper());
     }
 
     public static synchronized DataChanger getInstance() {
@@ -24,9 +28,15 @@ public class DataChanger extends Observable {
         return instance;
     }
 
-    public void postDownloadStatus(BaseEntity downloadEntity) {
+    public void postDownloadStatus(final BaseEntity downloadEntity) {
         setChanged();
-        notifyObservers(downloadEntity);
+        handler.post(new Runnable() { //切换线程
+            @Override
+            public void run() {
+                notifyObservers(downloadEntity);
+            }
+        });
+//        notifyObservers(downloadEntity);
     }
 
 //    public void addDataWatcher(DataWatcher dataWatcher) {
