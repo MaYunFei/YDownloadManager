@@ -39,7 +39,7 @@ public class SingleDownloadTask implements Runnable, IDownloadTask {
             }
 
             entity.currentSize = i += 1024;
-            downloadListener.onUpdate(entity);
+            entity.speed = 1024; //更新速度
 //            DataChanger.getInstance().postDownloadStatus(entity);
         }
 

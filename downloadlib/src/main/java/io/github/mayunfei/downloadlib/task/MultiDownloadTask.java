@@ -112,7 +112,7 @@ public class MultiDownloadTask implements IDownloadTask, SingleDownloadTask.Down
 
     @Override
     public void onUpdate(BaseDownloadEntity entity) {
-
+        //TODO 更新速度
     }
 
     @Override
@@ -138,9 +138,10 @@ public class MultiDownloadTask implements IDownloadTask, SingleDownloadTask.Down
 
     @Override
     public void onFinish(BaseDownloadEntity entity) {
-        Log.i(TAG,"onFinish");
+//        Log.i(TAG,"onUpdate");
         taskHashMap.remove(entity.getKey());
         completeSize.incrementAndGet();
+        multiDownloadEntity.speed = entity.speed;
         multiDownloadEntity.currentSize = completeSize.longValue();
         downloadListener.onUpdate(multiDownloadEntity);
         if (!checkNext()) {

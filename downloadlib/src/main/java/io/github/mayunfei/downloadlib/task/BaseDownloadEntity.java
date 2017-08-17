@@ -21,6 +21,7 @@ public class BaseDownloadEntity implements Serializable{
     protected long totalSize; //只在一个线程内 不用原子炒作
     protected long currentSize;
     protected    int status = WAIT;
+    protected long speed;
 
 
     public BaseDownloadEntity(String key, String name, String path) {
@@ -77,6 +78,13 @@ public class BaseDownloadEntity implements Serializable{
         this.status = status;
     }
 
+    public long getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(long speed) {
+        this.speed = speed;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -98,6 +106,7 @@ public class BaseDownloadEntity implements Serializable{
                 ", totalSize=" + totalSize +
                 ", currentSize=" + currentSize +
                 ", status=" + getStatus(status) +
+                ", speed=" + speed +
                 '}';
     }
 

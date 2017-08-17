@@ -28,10 +28,11 @@ public class DataChanger extends Observable {
     }
 
     public void postDownloadStatus(final BaseDownloadEntity downloadEntity) {
-        setChanged();
+
         handler.post(new Runnable() { //切换线程
             @Override
             public void run() {
+                setChanged();
                 notifyObservers(downloadEntity);
             }
         });

@@ -124,7 +124,7 @@ public class DownloadService extends Service implements SingleDownloadTask.Downl
 
         if (iDownloadTask != null) {
             iDownloadTask.cancel();
-        }else {
+        } else {
             //等待队列
         }
     }
@@ -138,7 +138,7 @@ public class DownloadService extends Service implements SingleDownloadTask.Downl
         IDownloadTask iDownloadTask = taskHashMap.remove(entity.getKey());
         if (iDownloadTask != null) {
             iDownloadTask.pause();
-        }else {
+        } else {
             waitQueue.remove(entity);
             entity.setStatus(DownloadEvent.PAUSE);
             onPause(entity);
@@ -165,29 +165,36 @@ public class DownloadService extends Service implements SingleDownloadTask.Downl
 
     @Override
     public void onDestroy() {
-        Log.i(TAG, "onDestroy");
+//        Log.i(TAG, "onDestroy");
         super.onDestroy();
     }
 
     @Override
     public void onUpdate(BaseDownloadEntity entity) {
-        DataChanger.getInstance().postDownloadStatus(entity);
+        if (entity.getCurrentSize() != entity.getTotalSize()) { //防止 finish update 同时
+            DataChanger.getInstance().postDownloadStatus(entity);
+        }
+//        Log.i(TAG,"onUpdate " + entity.toString());
     }
 
     @Override
     public void onPause(BaseDownloadEntity entity) {
         DataChanger.getInstance().postDownloadStatus(entity);
+//        Log.i(TAG,"onPause " + entity.toString());
         checkNext();
     }
 
     @Override
     public void onCancel(BaseDownloadEntity entity) {
         DataChanger.getInstance().postDownloadStatus(entity);
+
         checkNext();
     }
 
     @Override
     public void onFinish(BaseDownloadEntity entity) {
+//        Log.i(TAG,"onFinish" +
+//                " " + entity.toString());
         taskHashMap.remove(entity.getKey());
         DataChanger.getInstance().postDownloadStatus(entity);
         checkNext();
