@@ -5,8 +5,7 @@ import android.os.Looper;
 
 import java.util.Observable;
 
-import io.github.mayunfei.downloadlib.task.BaseEntity;
-import io.github.mayunfei.downloadlib.task.DownloadEntity;
+import io.github.mayunfei.downloadlib.task.BaseDownloadEntity;
 
 /**
  * Created by mayunfei on 17-8-14.
@@ -28,7 +27,7 @@ public class DataChanger extends Observable {
         return instance;
     }
 
-    public void postDownloadStatus(final BaseEntity downloadEntity) {
+    public void postDownloadStatus(final BaseDownloadEntity downloadEntity) {
         setChanged();
         handler.post(new Runnable() { //切换线程
             @Override

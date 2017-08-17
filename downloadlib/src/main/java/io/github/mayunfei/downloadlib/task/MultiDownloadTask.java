@@ -2,9 +2,6 @@ package io.github.mayunfei.downloadlib.task;
 
 import android.util.Log;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -12,15 +9,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
-import io.github.mayunfei.downloadlib.observer.DataChanger;
-import io.github.mayunfei.downloadlib.observer.DataWatcher;
 import io.github.mayunfei.downloadlib.utils.Constants;
 
 /**
  * Created by mayunfei on 17-8-15.
  */
 
-public class MultiDownloadTask implements IDownloadTask, DownloadTask.DownloadTaskListener {
+public class MultiDownloadTask implements IDownloadTask, SingleDownloadTask.DownloadTaskListener {
 
     private static final String TAG = "MultiDownloadTask";
     private final ExecutorService executor;
@@ -31,26 +26,26 @@ public class MultiDownloadTask implements IDownloadTask, DownloadTask.DownloadTa
 
     private AtomicLong completeSize = new AtomicLong(0);
     private AtomicLong failSize = new AtomicLong(0);
-    private LinkedBlockingQueue<DownloadEntity> waitQueue = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<SingleDownloadEntity> waitQueue = new LinkedBlockingQueue<>();
     private Map<String, IDownloadTask> taskHashMap = new ConcurrentHashMap<String, IDownloadTask>(); //所有加载的任务
 
 
-    private DownloadTask.DownloadTaskListener downloadListener;
+    private SingleDownloadTask.DownloadTaskListener downloadListener;
 
-    public MultiDownloadTask(MultiDownloadEntity multiDownloadEntity, ExecutorService executor, DownloadTask.DownloadTaskListener listener) {
+    public MultiDownloadTask(MultiDownloadEntity multiDownloadEntity, ExecutorService executor, SingleDownloadTask.DownloadTaskListener listener) {
         this.multiDownloadEntity = multiDownloadEntity;
         this.downloadListener = listener;
         this.executor = executor;
 //        this.downloadTasks = new ArrayList<>();
     }
 
-    private void startDownload(DownloadEntity entity) {
-        DownloadTask downloadTask = new DownloadTask(entity, this);
+    private void startDownload(SingleDownloadEntity entity) {
+        SingleDownloadTask downloadTask = new SingleDownloadTask(entity, this);
         taskHashMap.put(entity.getKey(), downloadTask);
         executor.submit(downloadTask);
     }
 
-    private void addDownloadEntity(DownloadEntity baseEntity) {
+    private void addDownloadEntity(SingleDownloadEntity baseEntity) {
         if (taskHashMap.size() >= Constants.MAX_DOWNLOADING) {
             waitQueue.offer(baseEntity);
         } else {
@@ -60,10 +55,9 @@ public class MultiDownloadTask implements IDownloadTask, DownloadTask.DownloadTa
 
     @Override
     public void start() {
-
         multiDownloadEntity.setStatus(DownloadEvent.DOWNLOADING);
         for (int i = 0; i < multiDownloadEntity.downloadEntities.size(); i++) {
-            DownloadEntity entity = multiDownloadEntity.downloadEntities.get(i);
+            SingleDownloadEntity entity = multiDownloadEntity.downloadEntities.get(i);
             if (entity.status != DownloadEvent.FINISH) {
                 addDownloadEntity(entity);
             }else {
@@ -77,7 +71,7 @@ public class MultiDownloadTask implements IDownloadTask, DownloadTask.DownloadTa
         if (isCancel || isPause) {
             return true;
         }
-        DownloadEntity nextEntity = waitQueue.poll();
+        SingleDownloadEntity nextEntity = waitQueue.poll();
         if (nextEntity != null) {
             startDownload(nextEntity);
             return true;
@@ -117,12 +111,12 @@ public class MultiDownloadTask implements IDownloadTask, DownloadTask.DownloadTa
     }
 
     @Override
-    public void onUpdate(BaseEntity entity) {
+    public void onUpdate(BaseDownloadEntity entity) {
 
     }
 
     @Override
-    public void onPause(BaseEntity entity) {
+    public void onPause(BaseDownloadEntity entity) {
         //全部pause
         taskHashMap.remove(entity.getKey());
         if (taskHashMap.size() == 0) {
@@ -133,7 +127,7 @@ public class MultiDownloadTask implements IDownloadTask, DownloadTask.DownloadTa
     }
 
     @Override
-    public void onCancel(BaseEntity entity) {
+    public void onCancel(BaseDownloadEntity entity) {
         //全部pause
         taskHashMap.remove(entity.getKey());
         if (taskHashMap.size() == 0) {
@@ -143,7 +137,7 @@ public class MultiDownloadTask implements IDownloadTask, DownloadTask.DownloadTa
     }
 
     @Override
-    public void onFinish(BaseEntity entity) {
+    public void onFinish(BaseDownloadEntity entity) {
         Log.i(TAG,"onFinish");
         taskHashMap.remove(entity.getKey());
         completeSize.incrementAndGet();
@@ -155,7 +149,7 @@ public class MultiDownloadTask implements IDownloadTask, DownloadTask.DownloadTa
     }
 
     @Override
-    public void onError(BaseEntity entity) {
+    public void onError(BaseDownloadEntity entity) {
         taskHashMap.remove(entity.getKey());
         failSize.incrementAndGet();
         if (!checkNext()) {

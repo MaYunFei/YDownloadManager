@@ -1,20 +1,15 @@
 package io.github.mayunfei.downloadlib;
 
-import android.util.Log;
-
 import java.io.File;
 import java.io.IOException;
 
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
 import io.github.mayunfei.downloadlib.progress.ProgressListener;
 import io.github.mayunfei.downloadlib.progress.ProgressResponseBody;
-import io.github.mayunfei.downloadlib.task.DownloadEntity;
-import io.reactivex.BackpressureStrategy;
+import io.github.mayunfei.downloadlib.task.SingleDownloadEntity;
 import io.reactivex.Flowable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.processors.BehaviorProcessor;
-import io.reactivex.processors.FlowableProcessor;
-import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -30,7 +25,7 @@ import okio.Okio;
 public class SimpleDownload implements ProgressListener {
 
     private final BehaviorProcessor<DownloadEvent> downloadProcessor;
-    private DownloadEntity downloadEntity;
+    private SingleDownloadEntity downloadEntity;
     private OkHttpClient httpClient;
     private Call call;
     private DownloadEvent event;
@@ -40,7 +35,7 @@ public class SimpleDownload implements ProgressListener {
     private long lastBytesWritten = 0L;
     private int minTime = 100;//最小回调时间100ms，避免频繁回调
 
-    SimpleDownload(DownloadEntity downloadEntity) {
+    SimpleDownload(SingleDownloadEntity downloadEntity) {
         this.downloadEntity = downloadEntity;
         httpClient = DownloadManager.getInstance().getOkHttpClient();
         downloadProcessor = BehaviorProcessor.create();

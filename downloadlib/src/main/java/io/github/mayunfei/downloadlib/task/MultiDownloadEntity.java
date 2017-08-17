@@ -9,16 +9,16 @@ import java.util.List;
  * Created by mayunfei on 17-8-15.
  */
 
-public class MultiDownloadEntity extends BaseEntity implements Serializable{
+public class MultiDownloadEntity extends BaseDownloadEntity implements Serializable{
 
-    List<DownloadEntity> downloadEntities;
+    List<SingleDownloadEntity> downloadEntities;
 
     public MultiDownloadEntity(String key, String name, String path) {
         super(key, name, path);
         downloadEntities = new ArrayList<>();
     }
 
-    public void addAllEntity(Collection<DownloadEntity> entities){
+    public void addAllEntity(Collection<SingleDownloadEntity> entities){
         downloadEntities.addAll(entities);
         totalSize = entities.size();
     }

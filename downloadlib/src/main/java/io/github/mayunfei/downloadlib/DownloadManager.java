@@ -7,8 +7,8 @@ import java.util.concurrent.TimeUnit;
 
 import io.github.mayunfei.downloadlib.observer.DataChanger;
 import io.github.mayunfei.downloadlib.observer.DataWatcher;
-import io.github.mayunfei.downloadlib.task.BaseEntity;
-import io.github.mayunfei.downloadlib.task.DownloadEntity;
+import io.github.mayunfei.downloadlib.task.BaseDownloadEntity;
+import io.github.mayunfei.downloadlib.task.SingleDownloadEntity;
 import io.github.mayunfei.downloadlib.utils.Constants;
 import okhttp3.OkHttpClient;
 
@@ -57,32 +57,32 @@ public class DownloadManager {
     }
 
     public SimpleDownload simpleDownload(String url, String path, String fileName) {
-        return new SimpleDownload(new DownloadEntity(url, url, fileName, path));
+        return new SimpleDownload(new SingleDownloadEntity(url, url, fileName, path));
     }
 
 
-    public void add(BaseEntity downloadEntity) {
+    public void add(BaseDownloadEntity downloadEntity) {
         Intent intent = new Intent(context, DownloadService.class);
         intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity);
         intent.putExtra(Constants.ACTION, Constants.ACTION_ADD);
         context.startService(intent);
     }
 
-    public void pause(BaseEntity downloadEntity) {
+    public void pause(BaseDownloadEntity downloadEntity) {
         Intent intent = new Intent(context, DownloadService.class);
         intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity);
         intent.putExtra(Constants.ACTION, Constants.ACTION_PAUSE);
         context.startService(intent);
     }
 
-    public void cancel(BaseEntity downloadEntity) {
+    public void cancel(BaseDownloadEntity downloadEntity) {
         Intent intent = new Intent(context, DownloadService.class);
         intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity);
         intent.putExtra(Constants.ACTION, Constants.ACTION_CANCEL);
         context.startService(intent);
     }
 
-    public void resume(BaseEntity downloadEntity) {
+    public void resume(BaseDownloadEntity downloadEntity) {
         Intent intent = new Intent(context, DownloadService.class);
         intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity);
         intent.putExtra(Constants.ACTION, Constants.ACTION_RESUME);

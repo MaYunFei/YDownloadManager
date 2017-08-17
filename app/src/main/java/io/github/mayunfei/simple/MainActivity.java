@@ -11,22 +11,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.mayunfei.downloadlib.DownloadManager;
-import io.github.mayunfei.downloadlib.SimpleDownload;
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
 import io.github.mayunfei.downloadlib.observer.DataWatcher;
-import io.github.mayunfei.downloadlib.task.BaseEntity;
-import io.github.mayunfei.downloadlib.task.DownloadEntity;
+import io.github.mayunfei.downloadlib.task.BaseDownloadEntity;
+import io.github.mayunfei.downloadlib.task.SingleDownloadEntity;
 import io.github.mayunfei.downloadlib.task.MultiDownloadEntity;
-import io.reactivex.annotations.NonNull;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
 
 public class MainActivity extends AppCompatActivity {
     private Button downloadBtn;
 
     DataWatcher watcher = new DataWatcher() {
         @Override
-        public void notifyUpdate(final BaseEntity data) {
+        public void notifyUpdate(final BaseDownloadEntity data) {
             Log.e("TAG ", "Thread = " + Thread.currentThread().getName() + "   " + data.toString());
             switch (data.getStatus()){
                 case DownloadEvent.CANCEL:
@@ -85,9 +81,9 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 MultiDownloadEntity multiDownloadEntity = new MultiDownloadEntity("http://down.apps.sina.cn/sinasrc/f2/40/39e9780c0ab67c8494247515f6b540f2"
                         , "helo", Environment.getExternalStorageDirectory().getAbsolutePath());
-                List<DownloadEntity> downloadEntities = new ArrayList<>();
+                List<SingleDownloadEntity> downloadEntities = new ArrayList<>();
                 for (int i = 0; i < 50; i++) {
-                    DownloadEntity entity = new DownloadEntity("url " + i, "name", Environment.getExternalStorageDirectory().getAbsolutePath());
+                    SingleDownloadEntity entity = new SingleDownloadEntity("url " + i, "name", Environment.getExternalStorageDirectory().getAbsolutePath());
                     downloadEntities.add(entity);
                 }
                 multiDownloadEntity.addAllEntity(downloadEntities);

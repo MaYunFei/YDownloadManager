@@ -18,9 +18,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
 import io.github.mayunfei.downloadlib.observer.DataChanger;
-import io.github.mayunfei.downloadlib.task.BaseEntity;
-import io.github.mayunfei.downloadlib.task.DownloadEntity;
-import io.github.mayunfei.downloadlib.task.DownloadTask;
+import io.github.mayunfei.downloadlib.task.BaseDownloadEntity;
+import io.github.mayunfei.downloadlib.task.SingleDownloadEntity;
+import io.github.mayunfei.downloadlib.task.SingleDownloadTask;
 import io.github.mayunfei.downloadlib.task.IDownloadTask;
 import io.github.mayunfei.downloadlib.task.MultiDownloadEntity;
 import io.github.mayunfei.downloadlib.task.MultiDownloadTask;
@@ -30,7 +30,7 @@ import io.github.mayunfei.downloadlib.utils.Constants;
  * Created by mayunfei on 17-7-31.
  */
 
-public class DownloadService extends Service implements DownloadTask.DownloadTaskListener {
+public class DownloadService extends Service implements SingleDownloadTask.DownloadTaskListener {
     private static final String TAG = "DownloadService";
 
     private ExecutorService executor = Executors.newCachedThreadPool(new ThreadFactory() {
@@ -51,7 +51,7 @@ public class DownloadService extends Service implements DownloadTask.DownloadTas
         }
     });
 
-    private LinkedBlockingQueue<BaseEntity> waitQueue = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<BaseDownloadEntity> waitQueue = new LinkedBlockingQueue<>();
     private Map<String, IDownloadTask> taskHashMap = new ConcurrentHashMap<String, IDownloadTask>(); //所有加载的任务
 
     @Nullable
@@ -69,7 +69,7 @@ public class DownloadService extends Service implements DownloadTask.DownloadTas
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG, "onStartCommand");
         if (intent != null) {
-            BaseEntity baseEntity = (BaseEntity) intent.getSerializableExtra(Constants.DOWNLOAD_ENTITY);
+            BaseDownloadEntity baseEntity = (BaseDownloadEntity) intent.getSerializableExtra(Constants.DOWNLOAD_ENTITY);
             int action = intent.getIntExtra(Constants.ACTION, -1);
             doAction(action, baseEntity);
         }
@@ -78,13 +78,13 @@ public class DownloadService extends Service implements DownloadTask.DownloadTas
 
 
     private void checkNext() {
-        BaseEntity nextEntity = waitQueue.poll();
+        BaseDownloadEntity nextEntity = waitQueue.poll();
         if (nextEntity != null) {
             startDownload(nextEntity);
         }
     }
 
-    private void addDownloadEntity(BaseEntity baseEntity) {
+    private void addDownloadEntity(BaseDownloadEntity baseEntity) {
         if (taskHashMap.size() >= Constants.MAX_DOWNLOADING) {
             waitQueue.offer(baseEntity);
             baseEntity.setStatus(DownloadEvent.WAIT);
@@ -94,7 +94,7 @@ public class DownloadService extends Service implements DownloadTask.DownloadTas
         }
     }
 
-    private void doAction(int action, BaseEntity entity) {
+    private void doAction(int action, BaseDownloadEntity entity) {
         switch (action) {
             case Constants.ACTION_ADD:
                 addDownloadEntity(entity);
@@ -114,7 +114,7 @@ public class DownloadService extends Service implements DownloadTask.DownloadTas
         }
     }
 
-    private void cancel(BaseEntity entity) {
+    private void cancel(BaseDownloadEntity entity) {
 //        DownloadTask task = taskHashMap.remove(key);
 //        if (task != null) {
 //            task.cancel();
@@ -129,7 +129,7 @@ public class DownloadService extends Service implements DownloadTask.DownloadTas
         }
     }
 
-    private void pause(BaseEntity entity) {
+    private void pause(BaseDownloadEntity entity) {
 //        DownloadTask task = taskHashMap.remove(key);
 //        if (task != null) {
 //            task.pause();
@@ -145,13 +145,13 @@ public class DownloadService extends Service implements DownloadTask.DownloadTas
         }
     }
 
-    private void startDownload(BaseEntity baseEntity) {
+    private void startDownload(BaseDownloadEntity baseEntity) {
         baseEntity.setStatus(DownloadEvent.DOWNLOADING);
         DataChanger.getInstance().postDownloadStatus(baseEntity);
         IDownloadTask task = taskHashMap.get(baseEntity.getKey());
         if (task == null) {
-            if (baseEntity instanceof DownloadEntity) {
-                task = new DownloadTask((DownloadEntity) baseEntity, this);
+            if (baseEntity instanceof SingleDownloadEntity) {
+                task = new SingleDownloadTask((SingleDownloadEntity) baseEntity, this);
                 taskHashMap.put(baseEntity.getKey(), task);
             }
             if (baseEntity instanceof MultiDownloadEntity) {
@@ -170,31 +170,31 @@ public class DownloadService extends Service implements DownloadTask.DownloadTas
     }
 
     @Override
-    public void onUpdate(BaseEntity entity) {
+    public void onUpdate(BaseDownloadEntity entity) {
         DataChanger.getInstance().postDownloadStatus(entity);
     }
 
     @Override
-    public void onPause(BaseEntity entity) {
-        DataChanger.getInstance().postDownloadStatus(entity);
-        checkNext();
-    }
-
-    @Override
-    public void onCancel(BaseEntity entity) {
+    public void onPause(BaseDownloadEntity entity) {
         DataChanger.getInstance().postDownloadStatus(entity);
         checkNext();
     }
 
     @Override
-    public void onFinish(BaseEntity entity) {
+    public void onCancel(BaseDownloadEntity entity) {
+        DataChanger.getInstance().postDownloadStatus(entity);
+        checkNext();
+    }
+
+    @Override
+    public void onFinish(BaseDownloadEntity entity) {
         taskHashMap.remove(entity.getKey());
         DataChanger.getInstance().postDownloadStatus(entity);
         checkNext();
     }
 
     @Override
-    public void onError(BaseEntity entity) {
+    public void onError(BaseDownloadEntity entity) {
         DataChanger.getInstance().postDownloadStatus(entity);
         checkNext();
     }

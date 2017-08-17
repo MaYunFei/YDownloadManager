@@ -13,7 +13,7 @@ import static io.github.mayunfei.downloadlib.event.DownloadEvent.WAIT;
  * Created by mayunfei on 17-8-15.
  */
 
-public class BaseEntity implements Serializable{
+public class BaseDownloadEntity implements Serializable{
 
     protected String key;
     protected String name;
@@ -23,7 +23,7 @@ public class BaseEntity implements Serializable{
     protected    int status = WAIT;
 
 
-    public BaseEntity(String key, String name, String path) {
+    public BaseDownloadEntity(String key, String name, String path) {
         this.key = key;
         this.name = name;
         this.path = path;
@@ -83,7 +83,7 @@ public class BaseEntity implements Serializable{
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DownloadEntity that = (DownloadEntity) o;
+        SingleDownloadEntity that = (SingleDownloadEntity) o;
 
         return key != null ? key.equals(that.key) : that.key == null;
 

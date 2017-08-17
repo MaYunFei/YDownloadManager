@@ -1,19 +1,18 @@
 package io.github.mayunfei.downloadlib.task;
 
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
-import io.github.mayunfei.downloadlib.observer.DataChanger;
 
 /**
  * Created by mayunfei on 17-7-26.
  */
 
-public class DownloadTask implements Runnable, IDownloadTask {
-    private DownloadEntity entity;
+public class SingleDownloadTask implements Runnable, IDownloadTask {
+    private SingleDownloadEntity entity;
     private volatile boolean isPause;
     private volatile boolean isCancel;
     private DownloadTaskListener downloadListener;
 
-    public DownloadTask(DownloadEntity entity, DownloadTaskListener onDownloadListener) {
+    public SingleDownloadTask(SingleDownloadEntity entity, DownloadTaskListener onDownloadListener) {
         this.entity = entity;
         this.downloadListener = onDownloadListener;
     }
@@ -66,14 +65,14 @@ public class DownloadTask implements Runnable, IDownloadTask {
     }
 
     public interface DownloadTaskListener {
-        void onUpdate(BaseEntity entity);
+        void onUpdate(BaseDownloadEntity entity);
 
-        void onPause(BaseEntity entity);
+        void onPause(BaseDownloadEntity entity);
 
-        void onCancel(BaseEntity entity);
+        void onCancel(BaseDownloadEntity entity);
 
-        void onFinish(BaseEntity entity);
+        void onFinish(BaseDownloadEntity entity);
 
-        void onError(BaseEntity entity);
+        void onError(BaseDownloadEntity entity);
     }
 }
