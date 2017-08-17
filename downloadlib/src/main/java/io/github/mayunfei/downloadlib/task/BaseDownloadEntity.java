@@ -13,14 +13,14 @@ import static io.github.mayunfei.downloadlib.event.DownloadEvent.WAIT;
  * Created by mayunfei on 17-8-15.
  */
 
-public class BaseDownloadEntity implements Serializable{
+public class BaseDownloadEntity implements Serializable {
 
     protected String key;
     protected String name;
     protected String path;
-    protected long totalSize; //只在一个线程内 不用原子炒作
+    protected long totalSize; //只在一个线程内 不用原子操作
     protected long currentSize;
-    protected    int status = WAIT;
+    protected int status = WAIT;
     protected long speed;
 
 

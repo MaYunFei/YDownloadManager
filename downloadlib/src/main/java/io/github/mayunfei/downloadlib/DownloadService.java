@@ -187,7 +187,6 @@ public class DownloadService extends Service implements SingleDownloadTask.Downl
     @Override
     public void onCancel(BaseDownloadEntity entity) {
         DataChanger.getInstance().postDownloadStatus(entity);
-
         checkNext();
     }
 
