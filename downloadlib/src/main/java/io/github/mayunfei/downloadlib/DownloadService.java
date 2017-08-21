@@ -16,6 +16,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.github.mayunfei.downloadlib.dao.DownloadDao;
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
 import io.github.mayunfei.downloadlib.observer.DataChanger;
 import io.github.mayunfei.downloadlib.task.BaseDownloadEntity;
@@ -32,7 +33,6 @@ import io.github.mayunfei.downloadlib.utils.Constants;
 
 public class DownloadService extends Service implements SingleDownloadTask.DownloadTaskListener {
     private static final String TAG = "DownloadService";
-
     private ExecutorService executor = Executors.newCachedThreadPool(new ThreadFactory() {
         private AtomicInteger count = new AtomicInteger();
 
@@ -85,6 +85,13 @@ public class DownloadService extends Service implements SingleDownloadTask.Downl
     }
 
     private void addDownloadEntity(BaseDownloadEntity baseEntity) {
+        if (!DownloadDao.getInstance().exist(baseEntity.getKey())){
+            DownloadDao.getInstance().install(baseEntity);
+        }else {
+            //TODO 存在记录
+        }
+
+
         if (taskHashMap.size() >= Constants.MAX_DOWNLOADING) {
             waitQueue.offer(baseEntity);
             baseEntity.setStatus(DownloadEvent.WAIT);
@@ -92,6 +99,7 @@ public class DownloadService extends Service implements SingleDownloadTask.Downl
         } else {
             startDownload(baseEntity);
         }
+
     }
 
     private void doAction(int action, BaseDownloadEntity entity) {

@@ -13,8 +13,8 @@ public class MultiDownloadEntity extends BaseDownloadEntity implements Serializa
 
     List<SingleDownloadEntity> downloadEntities;
 
-    public MultiDownloadEntity(String key, String name, String path) {
-        super(key, name, path);
+    public MultiDownloadEntity(String key) {
+        super(key);
         downloadEntities = new ArrayList<>();
     }
 
@@ -23,5 +23,7 @@ public class MultiDownloadEntity extends BaseDownloadEntity implements Serializa
         totalSize = entities.size();
     }
 
-
+    public List<SingleDownloadEntity> getDownloadEntities() {
+        return downloadEntities;
+    }
 }

@@ -5,6 +5,7 @@ import android.os.Looper;
 
 import java.util.Observable;
 
+import io.github.mayunfei.downloadlib.dao.DownloadDao;
 import io.github.mayunfei.downloadlib.task.BaseDownloadEntity;
 
 /**
@@ -14,11 +15,6 @@ import io.github.mayunfei.downloadlib.task.BaseDownloadEntity;
 public class DataChanger extends Observable {
 
     private static DataChanger instance;
-    private Handler handler;
-
-    private DataChanger() {
-        handler = new Handler(Looper.myLooper());
-    }
 
     public static synchronized DataChanger getInstance() {
         if (instance == null) {
@@ -27,8 +23,14 @@ public class DataChanger extends Observable {
         return instance;
     }
 
-    public void postDownloadStatus(final BaseDownloadEntity downloadEntity) {
+    private Handler handler;
 
+    private DataChanger() {
+        handler = new Handler(Looper.myLooper());
+    }
+
+    public void postDownloadStatus(final BaseDownloadEntity downloadEntity) {
+        DownloadDao.getInstance().update(downloadEntity);
         handler.post(new Runnable() { //切换线程
             @Override
             public void run() {

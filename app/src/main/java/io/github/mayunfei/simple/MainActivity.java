@@ -1,6 +1,5 @@
 package io.github.mayunfei.simple;
 
-import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,8 +17,8 @@ import io.github.mayunfei.downloadlib.DownloadManager;
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
 import io.github.mayunfei.downloadlib.observer.DataWatcher;
 import io.github.mayunfei.downloadlib.task.BaseDownloadEntity;
-import io.github.mayunfei.downloadlib.task.SingleDownloadEntity;
 import io.github.mayunfei.downloadlib.task.MultiDownloadEntity;
+import io.github.mayunfei.downloadlib.task.SingleDownloadEntity;
 
 public class MainActivity extends AppCompatActivity {
     private Button downloadBtn;
@@ -33,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
             for (int i = 0; i < datas.size(); i++) {
                 TestBean testBean = datas.get(i);
-                if (testBean.getKey().equals(data.getKey())){
+                if (testBean.getKey().equals(data.getKey())) {
                     testBean.setBaseDownloadEntity(data);
                     mainAdapter.notifyDataSetChanged();
                     break;
@@ -89,19 +88,29 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        DownloadManager.init(this);
         setContentView(R.layout.activity_main);
         downloadBtn = (Button) findViewById(R.id.down_btn);
         listView = (ListView) findViewById(R.id.list_view);
         datas = new ArrayList<>();
         mainAdapter = new MainAdapter(datas);
         listView.setAdapter(mainAdapter);
-        DownloadManager.init(this);
         downloadBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+//                SingleDownloadEntity singleDownloadEntity = new SingleDownloadEntity("key", "http://down.apps.sina.cn/sinasrc/f2/40/39e9780c0ab67c8494247515f6b540f2.apk");
+//                DownloadManager.getInstance().add(singleDownloadEntity);
+                addTest("https://md.dongaocloud.com/2b50/2b53/4ac/cc3/01c3e61cb43e03d9cf2f9428141d7c8d/01c3e61cb43e03d9cf2f9428141d7c8d-",200);
+                addTest("https://md.dongaocloud.com/2b50/2b53/227/736/a1f52ebfa24a75d8cbd0acd290ad2858/a1f52ebfa24a75d8cbd0acd290ad2858-",100);
+                addTest("https://md.dongaocloud.com/2b50/2b53/e8a/d9b/bcefb3996739c9a6f0293d0d9599d4d9/bcefb3996739c9a6f0293d0d9599d4d9-",226);
+                addTest("https://md.dongaocloud.com/2b50/2b53/6dd/2a1/413b8fcf04c48ff475a6e86f958b5e78/413b8fcf04c48ff475a6e86f958b5e78-",229);
+                addTest("https://md.dongaocloud.com/2b50/2b53/38d/4a1/a9e6cefb02189e049a260119a7a8d2a7/a9e6cefb02189e049a260119a7a8d2a7-",278);
+                addTest("https://md.dongaocloud.com/2b50/2b53/d0b/356/9c2bf190837bf9e0fc0f4d914a17e8c9/9c2bf190837bf9e0fc0f4d914a17e8c9-",241);
+                addTest("https://md.dongaocloud.com/2b50/2b53/6b0/66e/5756b3c6f899844923a666ffd9d76eae/5756b3c6f899844923a666ffd9d76eae-",254);
             }
         });
+
+
 
 //        SimpleDownload simpleDownload = DownloadManager.getInstance().simpleDownload("http://down.apps.sina.cn/sinasrc/f2/40/39e9780c0ab67c8494247515f6b540f2.apk", Environment.getExternalStorageDirectory().getAbsolutePath(), "helloworld.apk");
 //        simpleDownload.start().subscribe(new Consumer<DownloadEvent>() {
@@ -132,26 +141,25 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
-        for (int j = 0; j < 10; j++) {
-            String key = "multi key " + j;
-            MultiDownloadEntity multiDownloadEntity = new MultiDownloadEntity(key
-                    , "helo", Environment.getExternalStorageDirectory().getAbsolutePath());
-            List<SingleDownloadEntity> downloadEntities = new ArrayList<>();
-            for (int i = 0; i < 5; i++) {
-                SingleDownloadEntity entity = new SingleDownloadEntity("url " + i, "name", Environment.getExternalStorageDirectory().getAbsolutePath());
-                downloadEntities.add(entity);
-            }
-            multiDownloadEntity.addAllEntity(downloadEntities);
-
-            DownloadManager.getInstance().add(multiDownloadEntity);
-            TestBean testBean = new TestBean();
-            testBean.setKey(key);
-            testBean.setBaseDownloadEntity(multiDownloadEntity);
-            datas.add(testBean);
-        }
-
-        mainAdapter.notifyDataSetChanged();
+//        for (int j = 0; j < 20; j++) {
+//            String key = "multi key " + j;
+//            MultiDownloadEntity multiDownloadEntity = new MultiDownloadEntity(key
+//            );
+//            List<SingleDownloadEntity> downloadEntities = new ArrayList<>();
+//            for (int i = 0; i < 5; i++) {
+//                SingleDownloadEntity entity = new SingleDownloadEntity("url" + j + i, "url" + i);
+//                downloadEntities.add(entity);
+//            }
+//            multiDownloadEntity.addAllEntity(downloadEntities);
+//
+//            DownloadManager.getInstance().add(multiDownloadEntity);
+//            TestBean testBean = new TestBean();
+//            testBean.setKey(key);
+//            testBean.setBaseDownloadEntity(multiDownloadEntity);
+//            datas.add(testBean);
+//        }
+//
+//        mainAdapter.notifyDataSetChanged();
 
 
         DownloadManager.getInstance().addObserver(watcher);
@@ -169,11 +177,39 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void addTest(String url_pr,int length){
+        String key = url_pr;
+        MultiDownloadEntity multiDownloadEntity = new MultiDownloadEntity(key
+        );
+        List<SingleDownloadEntity> downloadEntities = new ArrayList<>();
+        for (int i = 0; i <= length; i++) {
+            String temp = "";
+            if (i < 10) {
+                temp = "00" + i;
+            }
+            if (i >= 10 && i < 100) {
+                temp = "0" + i;
+            }
+            if (i >= 100) {
+                temp = "" + i;
+            }
+            String url = url_pr + temp + ".ts";
+            SingleDownloadEntity entity = new SingleDownloadEntity(url, url);
+            downloadEntities.add(entity);
+        }
+        multiDownloadEntity.addAllEntity(downloadEntities);
+        TestBean testBean = new TestBean();
+        testBean.setKey(key);
+        testBean.setBaseDownloadEntity(multiDownloadEntity);
+        datas.add(testBean);
+        DownloadManager.getInstance().add(multiDownloadEntity);
+    }
+
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        DownloadManager.getInstance().delectObserver(watcher);
+        DownloadManager.getInstance().deleteObserver(watcher);
     }
 
     private static class MainAdapter extends BaseAdapter {
@@ -210,7 +246,7 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder = (ViewHolder) convertView.getTag();
             }
             final TestBean testBean = list.get(position);
-            switch (testBean.getBaseDownloadEntity().getStatus()){
+            switch (testBean.getBaseDownloadEntity().getStatus()) {
                 case DownloadEvent.CANCEL:
                     break;
                 case DownloadEvent.DOWNLOADING:

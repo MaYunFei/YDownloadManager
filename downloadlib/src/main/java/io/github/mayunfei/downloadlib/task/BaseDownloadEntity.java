@@ -16,17 +16,23 @@ import static io.github.mayunfei.downloadlib.event.DownloadEvent.WAIT;
 public class BaseDownloadEntity implements Serializable {
 
     protected String key;
-    protected String name;
-    protected String path;
     protected long totalSize; //只在一个线程内 不用原子操作
     protected long currentSize;
     protected int status = WAIT;
-    protected long speed;
+    protected String path;
+    protected float speed;
 
 
-    public BaseDownloadEntity(String key, String name, String path) {
+    public BaseDownloadEntity(String key) {
         this.key = key;
-        this.name = name;
+    }
+
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
         this.path = path;
     }
 
@@ -36,22 +42,6 @@ public class BaseDownloadEntity implements Serializable {
 
     public void setKey(String key) {
         this.key = key;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
     }
 
     public long getTotalSize() {
@@ -78,13 +68,6 @@ public class BaseDownloadEntity implements Serializable {
         this.status = status;
     }
 
-    public long getSpeed() {
-        return speed;
-    }
-
-    public void setSpeed(long speed) {
-        this.speed = speed;
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -101,13 +84,19 @@ public class BaseDownloadEntity implements Serializable {
     public String toString() {
         return "DownloadEntity{" +
                 "key='" + key + '\'' +
-                ", name='" + name + '\'' +
-                ", path='" + path + '\'' +
                 ", totalSize=" + totalSize +
                 ", currentSize=" + currentSize +
                 ", status=" + getStatus(status) +
                 ", speed=" + speed +
                 '}';
+    }
+
+    public float getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(float speed) {
+        this.speed = speed;
     }
 
     @Override
@@ -138,4 +127,6 @@ public class BaseDownloadEntity implements Serializable {
         }
         return "未知";
     }
+
+
 }

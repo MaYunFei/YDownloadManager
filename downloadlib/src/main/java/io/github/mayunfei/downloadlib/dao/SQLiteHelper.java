@@ -11,7 +11,7 @@ import android.database.sqlite.SQLiteOpenHelper;
  */
 
 class SQLiteHelper extends SQLiteOpenHelper {
-    private static final String DATABASE_NAME = "rxdownload.db";
+    private static final String DATABASE_NAME = "download.db";
     private static final int VERSION = 1;
 
     public SQLiteHelper(Context context) {
@@ -20,6 +20,8 @@ class SQLiteHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+        db.execSQL(DownloadEntityTable.CREATE_TABLE);
+        db.execSQL(PartDownloadEntityTable.CREATE_TABLE);
     }
 
     @Override

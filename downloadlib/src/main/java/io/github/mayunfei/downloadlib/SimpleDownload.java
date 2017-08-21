@@ -1,5 +1,7 @@
 package io.github.mayunfei.downloadlib;
 
+import android.text.TextUtils;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -17,6 +19,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okio.BufferedSink;
 import okio.Okio;
+
+import static io.github.mayunfei.downloadlib.utils.Utils.getFileNameFromUrl;
 
 /**
  * Created by mayunfei on 17-7-26.
@@ -58,7 +62,7 @@ public class SimpleDownload implements ProgressListener {
             @Override
             public void onResponse(Call call, okhttp3.Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    File downloadedFile = new File(downloadEntity.getPath(), downloadEntity.getName());
+                    File downloadedFile = new File(downloadEntity.getPath(), TextUtils.isEmpty(downloadEntity.getName())?getFileNameFromUrl(downloadEntity.getUrl()):downloadEntity.getName());
                     BufferedSink sink = Okio.buffer(Okio.sink(downloadedFile));
                     sink.writeAll(new ProgressResponseBody(response.body(), SimpleDownload.this).source());
                     sink.close();
@@ -102,6 +106,7 @@ public class SimpleDownload implements ProgressListener {
 //            finished(bytesRead, contentLength);
 //        }
     }
+
 
 //    private void error(Exception e) {
 //        event.status = DownloadEvent.ERROR;

@@ -9,17 +9,26 @@ import java.io.Serializable;
 
 public class SingleDownloadEntity extends BaseDownloadEntity implements Serializable {
 
-    public SingleDownloadEntity(String key, String url, String name, String path) {
-        super(key, name, path);
+    String name;
+    String url;
+    public SingleDownloadEntity(String key, String url) {
+        super(key);
         this.url = url;
     }
 
-    public SingleDownloadEntity(String url, String name, String path) {
-        super(url, name, path);
+    public SingleDownloadEntity(String key, String url,String name) {
+        super(key);
         this.url = url;
+        this.name = name;
     }
 
-    private String url;
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public String getUrl() {
         return url;

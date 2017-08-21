@@ -12,6 +12,7 @@ import io.github.mayunfei.downloadlib.event.DownloadEvent;
 import io.github.mayunfei.downloadlib.utils.Constants;
 
 /**
+ * 多个文件打包
  * Created by mayunfei on 17-8-15.
  */
 
@@ -46,7 +47,7 @@ public class MultiDownloadTask implements IDownloadTask, SingleDownloadTask.Down
     }
 
     private void addDownloadEntity(SingleDownloadEntity baseEntity) {
-        if (taskHashMap.size() >= Constants.MAX_DOWNLOADING) {
+        if (taskHashMap.size() >= Constants.MAX_PART_COUNT) {
             waitQueue.offer(baseEntity);
         } else {
             startDownload(baseEntity);

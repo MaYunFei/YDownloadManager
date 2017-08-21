@@ -2,12 +2,17 @@ package io.github.mayunfei.downloadlib;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Environment;
+import android.text.TextUtils;
 
+import java.io.File;
 import java.util.concurrent.TimeUnit;
 
+import io.github.mayunfei.downloadlib.dao.DownloadDao;
 import io.github.mayunfei.downloadlib.observer.DataChanger;
 import io.github.mayunfei.downloadlib.observer.DataWatcher;
 import io.github.mayunfei.downloadlib.task.BaseDownloadEntity;
+import io.github.mayunfei.downloadlib.task.MultiDownloadEntity;
 import io.github.mayunfei.downloadlib.task.SingleDownloadEntity;
 import io.github.mayunfei.downloadlib.utils.Constants;
 import okhttp3.OkHttpClient;
@@ -21,8 +26,14 @@ public class DownloadManager {
     private static DownloadManager INSTANCE;
     private OkHttpClient okHttpClient;
     private Context context;
+    private String path;
 
     private DownloadManager() {
+        path = Environment.getExternalStorageDirectory().getAbsolutePath();
+    }
+
+    public String getPath() {
+        return path;
     }
 
     public synchronized static void init(Context context) {
@@ -35,6 +46,7 @@ public class DownloadManager {
                 .readTimeout(Constants.TIME, TimeUnit.MILLISECONDS)
                 .build();
         INSTANCE.context = context.getApplicationContext();
+        DownloadDao.init(context.getApplicationContext());
     }
 
     public synchronized static void init(Context context, OkHttpClient okHttpClient) {
@@ -43,6 +55,7 @@ public class DownloadManager {
         }
         INSTANCE.okHttpClient = okHttpClient;
         INSTANCE.context = context.getApplicationContext();
+        DownloadDao.init(context.getApplicationContext());
     }
 
     public static DownloadManager getInstance() {
@@ -52,16 +65,25 @@ public class DownloadManager {
         return INSTANCE;
     }
 
-    OkHttpClient getOkHttpClient() {
+    public OkHttpClient getOkHttpClient() {
         return okHttpClient;
     }
 
-    public SimpleDownload simpleDownload(String url, String path, String fileName) {
-        return new SimpleDownload(new SingleDownloadEntity(url, url, fileName, path));
-    }
+//    public SimpleDownload simpleDownload(String url, String path, String fileName) {
+//        return new SimpleDownload(new SingleDownloadEntity(url, url, fileName, path));
+//    }
 
 
     public void add(BaseDownloadEntity downloadEntity) {
+        if (TextUtils.isEmpty(downloadEntity.getPath())) {
+            //TODO 是否要配置呢
+            downloadEntity.setPath(path+ File.separator+downloadEntity.getKey());
+        }
+        if (downloadEntity instanceof MultiDownloadEntity) {
+            for (SingleDownloadEntity singleDownloadEntity : ((MultiDownloadEntity) downloadEntity).getDownloadEntities()) {
+                singleDownloadEntity.setPath(downloadEntity.getPath());
+            }
+        }
         Intent intent = new Intent(context, DownloadService.class);
         intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity);
         intent.putExtra(Constants.ACTION, Constants.ACTION_ADD);
@@ -98,7 +120,7 @@ public class DownloadManager {
         DataChanger.getInstance().addObserver(dataWatcher);
     }
 
-    public void delectObserver(DataWatcher dataWatcher) {
+    public void deleteObserver(DataWatcher dataWatcher) {
         DataChanger.getInstance().deleteObserver(dataWatcher);
     }
 }
