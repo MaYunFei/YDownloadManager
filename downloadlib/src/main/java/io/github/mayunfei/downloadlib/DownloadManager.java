@@ -29,7 +29,7 @@ public class DownloadManager {
     private String path;
 
     private DownloadManager() {
-        path = Environment.getExternalStorageDirectory().getAbsolutePath();
+        path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "YUNFEI";
     }
 
     public String getPath() {
@@ -77,15 +77,18 @@ public class DownloadManager {
     public void add(BaseDownloadEntity downloadEntity) {
         if (TextUtils.isEmpty(downloadEntity.getPath())) {
             //TODO 是否要配置呢
-            downloadEntity.setPath(path+ File.separator+downloadEntity.getKey());
+            downloadEntity.setPath(path + File.separator + downloadEntity.getKey());
         }
         if (downloadEntity instanceof MultiDownloadEntity) {
             for (SingleDownloadEntity singleDownloadEntity : ((MultiDownloadEntity) downloadEntity).getDownloadEntities()) {
+                if (!TextUtils.isEmpty(singleDownloadEntity.getPath())) { //第一次添加应该设置
+                    break;
+                }
                 singleDownloadEntity.setPath(downloadEntity.getPath());
             }
         }
         Intent intent = new Intent(context, DownloadService.class);
-        intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity);
+        intent.putExtra(Constants.DOWNLOAD_ENTITY, downloadEntity); //不能传太大数据，intent最多40k
         intent.putExtra(Constants.ACTION, Constants.ACTION_ADD);
         context.startService(intent);
     }
@@ -122,5 +125,9 @@ public class DownloadManager {
 
     public void deleteObserver(DataWatcher dataWatcher) {
         DataChanger.getInstance().deleteObserver(dataWatcher);
+    }
+
+    public BaseDownloadEntity queryDownloadEntity(String key) {
+        return DownloadDao.getInstance().query(key);
     }
 }

@@ -26,6 +26,7 @@ import io.github.mayunfei.downloadlib.task.IDownloadTask;
 import io.github.mayunfei.downloadlib.task.MultiDownloadEntity;
 import io.github.mayunfei.downloadlib.task.MultiDownloadTask;
 import io.github.mayunfei.downloadlib.utils.Constants;
+import io.github.mayunfei.downloadlib.utils.Utils;
 
 /**
  * Created by mayunfei on 17-7-31.
@@ -78,6 +79,7 @@ public class DownloadService extends Service implements SingleDownloadTask.Downl
 
 
     private void checkNext() {
+        Log.i(TAG,"checkNext");
         BaseDownloadEntity nextEntity = waitQueue.poll();
         if (nextEntity != null) {
             startDownload(nextEntity);
@@ -90,7 +92,6 @@ public class DownloadService extends Service implements SingleDownloadTask.Downl
         }else {
             //TODO 存在记录
         }
-
 
         if (taskHashMap.size() >= Constants.MAX_DOWNLOADING) {
             waitQueue.offer(baseEntity);
@@ -188,13 +189,15 @@ public class DownloadService extends Service implements SingleDownloadTask.Downl
     @Override
     public void onPause(BaseDownloadEntity entity) {
         DataChanger.getInstance().postDownloadStatus(entity);
-//        Log.i(TAG,"onPause " + entity.toString());
+        Log.i(TAG,"onPause " + entity.toString());
         checkNext();
     }
 
     @Override
     public void onCancel(BaseDownloadEntity entity) {
         DataChanger.getInstance().postDownloadStatus(entity);
+        DownloadDao.getInstance().delete(entity.getKey());
+        Utils.delete(entity.getPath());
         checkNext();
     }
 

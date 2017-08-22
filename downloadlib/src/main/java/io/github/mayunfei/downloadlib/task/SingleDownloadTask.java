@@ -5,6 +5,10 @@ import android.util.Log;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.ProtocolException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 
 import io.github.mayunfei.downloadlib.DownloadManager;
 import io.github.mayunfei.downloadlib.SimpleDownload;
@@ -12,12 +16,16 @@ import io.github.mayunfei.downloadlib.event.DownloadEvent;
 import io.github.mayunfei.downloadlib.observer.DataChanger;
 import io.github.mayunfei.downloadlib.progress.ProgressListener;
 import io.github.mayunfei.downloadlib.progress.ProgressResponseBody;
+import io.github.mayunfei.downloadlib.utils.Constants;
+import io.github.mayunfei.downloadlib.utils.Utils;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import okhttp3.internal.http2.StreamResetException;
 import okio.BufferedSink;
+import okio.BufferedSource;
 import okio.Okio;
 
 import static io.github.mayunfei.downloadlib.utils.Utils.getFileNameFromUrl;
@@ -38,8 +46,9 @@ public class SingleDownloadTask implements Runnable, IDownloadTask, ProgressList
     //计算速度
     private long lastRefreshTime = 0L;
     private long lastBytesWritten = 0L;
-    private int minTime = 500;//最小回调时间100ms，避免频繁回调
+
     private Call mCall;
+    private int retryCount = 0; //重试的次数
 
 
     public SingleDownloadTask(SingleDownloadEntity entity, DownloadTaskListener onDownloadListener) {
@@ -49,16 +58,19 @@ public class SingleDownloadTask implements Runnable, IDownloadTask, ProgressList
 
     @Override
     public void start() {
-
+        Log.d(TAG, " start retry = " + retryCount + "  " + entity.getUrl());
         entity.status = DownloadEvent.DOWNLOADING;
-
         String url = entity.getUrl();
         OkHttpClient okHttpClient = DownloadManager.getInstance().getOkHttpClient();
         Request request = new Request.Builder().url(url).build();
         mCall = okHttpClient.newCall(request);
         String path = entity.getPath();
         File file = new File(path);
-        file.mkdirs();
+        if (!file.exists()) {
+            file.mkdirs();
+        }
+        BufferedSink sink = null;
+        BufferedSource source = null;
         try {
             Response response = mCall.execute();
             if (response.isSuccessful()) {
@@ -69,15 +81,36 @@ public class SingleDownloadTask implements Runnable, IDownloadTask, ProgressList
                         entity.name = getFileNameFromUrl(entity.url);
                     }
                     File downloadedFile = new File(path, entity.name);
-                    BufferedSink sink = Okio.buffer(Okio.sink(downloadedFile));
-                    sink.writeAll(new ProgressResponseBody(response.body(), this).source());
-                    sink.close();
+                    sink = Okio.buffer(Okio.sink(downloadedFile));
+                    source = new ProgressResponseBody(response.body(), this).source();
+                    sink.writeAll(source);
+                    sink.flush();
                 }
+            } else {
+                if (response.code() == 404) {
+                    //400 文件为找到 log
+                    Log.e(TAG, "文件未找到 " + entity.getUrl());
+                }
+                Log.e(TAG, "error code " + response.code() + " " + entity.getUrl());
+                downloadListener.onError(entity);
             }
 
         } catch (IOException e) {
+            if (e instanceof StreamResetException) { //取消
+                return;
+            }
+            if (retry(e)) {
+                //超时
+                if (retryCount < Constants.RETRY_COUNT) {
+                    retryCount++;
+                    start();
+                    return;
+                }
+            }
             Log.e(TAG, e.toString());
             downloadListener.onError(entity);
+        } finally {
+            Utils.close(sink, source);
         }
 
 //        text();  测试用
@@ -85,6 +118,12 @@ public class SingleDownloadTask implements Runnable, IDownloadTask, ProgressList
 //        DataChanger.getInstance().postDownloadStatus(entity);
     }
 
+
+    private boolean retry(Exception e) {
+        return e instanceof SocketTimeoutException
+                || e instanceof SocketException
+                || e instanceof ProtocolException;
+    }
 
     @Override
     public void pause() {
@@ -122,15 +161,17 @@ public class SingleDownloadTask implements Runnable, IDownloadTask, ProgressList
             return;
         }
         long currentTime = System.currentTimeMillis();
-        if (currentTime - lastRefreshTime >= minTime || bytesRead == contentLength || done) {
+        if (currentTime - lastRefreshTime >= Constants.UPDATE_PRE_TIME && bytesRead != contentLength && !done) {
             long intervalTime = (currentTime - lastRefreshTime);
             if (intervalTime == 0) {
                 intervalTime += 1;
             }
             long updateBytes = bytesRead - lastBytesWritten;
             final long networkSpeed = updateBytes / intervalTime;
+            Log.i(TAG, entity.getKey() + " speed = " + networkSpeed + "  updateBytes = " + updateBytes + "  time = " + intervalTime);
             update(bytesRead, contentLength, networkSpeed);
             entity.speed = networkSpeed;
+
             lastRefreshTime = System.currentTimeMillis();
             lastBytesWritten = bytesRead;
         }
@@ -150,7 +191,7 @@ public class SingleDownloadTask implements Runnable, IDownloadTask, ProgressList
         entity.status = DownloadEvent.DOWNLOADING;
         entity.currentSize = bytesRead;
         entity.speed = speed;
-        DataChanger.getInstance().postDownloadStatus(entity);
+        downloadListener.onUpdate(entity);
     }
 
     public interface DownloadTaskListener {

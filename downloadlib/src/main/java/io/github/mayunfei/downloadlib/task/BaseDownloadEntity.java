@@ -74,7 +74,7 @@ public class BaseDownloadEntity implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        SingleDownloadEntity that = (SingleDownloadEntity) o;
+        BaseDownloadEntity that = (BaseDownloadEntity) o;
 
         return key != null ? key.equals(that.key) : that.key == null;
 

@@ -6,6 +6,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.github.mayunfei.downloadlib.observer.DataChanger;
 import io.github.mayunfei.downloadlib.task.BaseDownloadEntity;
 import io.github.mayunfei.downloadlib.task.MultiDownloadEntity;
@@ -37,15 +40,21 @@ public class DownloadDao {
     }
 
 
-    private BaseDownloadEntity query(String key) {
+    /**
+     * 通过key 查询
+     *
+     * @param key 查询条件
+     * @return 查询结构
+     */
+    public BaseDownloadEntity query(String key) {
         SQLiteDatabase db = sqLiteHelper.getReadableDatabase();
         BaseDownloadEntity entity = null;
         Cursor cursor = db.rawQuery("SELECT * FROM " + DownloadEntityTable.TABLE_NAME + " WHERE " + DownloadEntityTable.KEY + " = ?", new String[]{key});
-        int count = cursor.getCount();
-        if (count == 0) {
-            return null;
-        }
         try {
+            int count = cursor.getCount();
+            if (count == 0) {
+                return null;
+            }
             cursor.moveToFirst();
             int type = DBHelper.getInt(cursor, DownloadEntityTable.TYPE);
             return queryEntityByType(cursor, type, key);
@@ -64,9 +73,50 @@ public class DownloadDao {
         return null;
     }
 
-    private BaseDownloadEntity queryMultiEntity(Cursor cursor, String key) {
+    private BaseDownloadEntity queryMultiEntity(Cursor entityCursor, String key) {
         //TODO 查询
-        return null;
+        int status = DBHelper.getInt(entityCursor, DownloadEntityTable.STATUS);
+        String path = DBHelper.getString(entityCursor, DownloadEntityTable.PATH);
+        long totalSize = DBHelper.getLong(entityCursor, DownloadEntityTable.TOTAL_SIZE);
+        long currentSize = DBHelper.getLong(entityCursor, DownloadEntityTable.CURRENT_SIZE);
+        SQLiteDatabase db = sqLiteHelper.getReadableDatabase();
+        MultiDownloadEntity entity = null;
+        Cursor cursor = db.rawQuery("SELECT * FROM " + PartDownloadEntityTable.TABLE_NAME + " WHERE " + PartDownloadEntityTable.F_KEY + " = ?", new String[]{key});
+        try {
+            int count = cursor.getCount();
+            if (count == 0) {
+                return null;
+            }
+            entity = new MultiDownloadEntity(key);
+            entity.setStatus(status);
+            entity.setPath(path);
+            entity.setTotalSize(totalSize);
+            entity.setCurrentSize(currentSize);
+            List<SingleDownloadEntity> list = new ArrayList<>();
+            while (cursor.moveToNext()) {
+                list.add(querySingleEntity(cursor));
+            }
+            entity.addAllEntity(list);
+            return entity;
+        } finally {
+            cursor.close();
+        }
+    }
+
+    private SingleDownloadEntity querySingleEntity(Cursor cursor) {
+        String url = DBHelper.getString(cursor, PartDownloadEntityTable.URL);
+        String key = DBHelper.getString(cursor, PartDownloadEntityTable.KEY);
+        String f_key = DBHelper.getString(cursor, PartDownloadEntityTable.F_KEY);
+        String path = DBHelper.getString(cursor, PartDownloadEntityTable.PATH);
+        long totalSize = DBHelper.getLong(cursor, PartDownloadEntityTable.TOTAL_SIZE);
+        long currentSize = DBHelper.getLong(cursor, PartDownloadEntityTable.CURRENT_SIZE);
+        int status = DBHelper.getInt(cursor, PartDownloadEntityTable.STATUS);
+        SingleDownloadEntity entity = new SingleDownloadEntity(key, url);
+        entity.setPath(path);
+        entity.setTotalSize(totalSize);
+        entity.setCurrentSize(currentSize);
+        entity.setStatus(status);
+        return entity;
     }
 
     private BaseDownloadEntity querySingleEntity(Cursor entityCursor, String key) {
@@ -85,19 +135,18 @@ public class DownloadDao {
         }
         try {
             cursor.moveToFirst();
-            String url = DBHelper.getString(cursor, PartDownloadEntityTable.URL);
-            SingleDownloadEntity singleDownloadEntity = new SingleDownloadEntity(key, url);
-            singleDownloadEntity.setStatus(status);
-            singleDownloadEntity.setPath(path);
-            singleDownloadEntity.setCurrentSize(currentSize);
-            singleDownloadEntity.setTotalSize(totalSize);
-            singleDownloadEntity.setKey(key);
+//            String url = DBHelper.getString(cursor, PartDownloadEntityTable.URL);
+//            SingleDownloadEntity singleDownloadEntity = new SingleDownloadEntity(key, url);
+//            singleDownloadEntity.setStatus(status);
+//            singleDownloadEntity.setPath(path);
+//            singleDownloadEntity.setCurrentSize(currentSize);
+//            singleDownloadEntity.setTotalSize(totalSize);
+//            singleDownloadEntity.setKey(key);
+            return querySingleEntity(cursor);
 
         } finally {
             cursor.close();
         }
-
-        return null;
     }
 
     public void update(BaseDownloadEntity entity) {
@@ -235,5 +284,14 @@ public class DownloadDao {
                 cursor.close();
             }
         }
+    }
+
+    public void delete(String key) {
+        SQLiteDatabase db = sqLiteHelper.getWritableDatabase();
+        db.beginTransaction();
+        db.delete(DownloadEntityTable.TABLE_NAME, DownloadEntityTable.KEY + " = ? ", new String[]{key});
+        db.delete(PartDownloadEntityTable.TABLE_NAME, PartDownloadEntityTable.F_KEY + " = ?", new String[]{key});
+        db.setTransactionSuccessful();
+        db.endTransaction();
     }
 }
