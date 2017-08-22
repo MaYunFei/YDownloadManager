@@ -29,9 +29,13 @@ public class DataChanger extends Observable {
         handler = new Handler(Looper.myLooper());
     }
 
+    public void runOnMainThread(Runnable runnable){
+        handler.post(runnable);
+    }
+
     public void postDownloadStatus(final BaseDownloadEntity downloadEntity) {
         DownloadDao.getInstance().update(downloadEntity);
-        handler.post(new Runnable() { //切换线程
+        runOnMainThread(new Runnable() {
             @Override
             public void run() {
                 setChanged();

@@ -1,11 +1,5 @@
 package io.github.mayunfei.downloadlib.task;
 
-/**
- * Created by mayunfei on 17-8-14.
- */
-
-public interface IDownloadTask extends Runnable{
-    void start();
+public interface IDownloadTask extends IBaseDownloadTask, Runnable {
     void pause();
-    void cancel();
 }

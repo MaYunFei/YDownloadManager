@@ -34,23 +34,6 @@ import io.github.mayunfei.downloadlib.utils.Utils;
 
 public class DownloadService extends Service implements SingleDownloadTask.DownloadTaskListener {
     private static final String TAG = "DownloadService";
-    private ExecutorService executor = Executors.newCachedThreadPool(new ThreadFactory() {
-        private AtomicInteger count = new AtomicInteger();
-
-        @Override
-        public Thread newThread(@NonNull final Runnable r) {
-            final int c = count.incrementAndGet();
-            Log.i(TAG, "new Thread ++++ " + c + "    ");
-            return new Thread(new Runnable() {
-                @Override
-                public void run() {
-//                    Log.i(TAG,"start +++ "+c);
-                    r.run();
-//                    Log.i(TAG,"end +++ "+c);
-                }
-            }, "download thread " + c);
-        }
-    });
 
     private LinkedBlockingQueue<BaseDownloadEntity> waitQueue = new LinkedBlockingQueue<>();
     private Map<String, IDownloadTask> taskHashMap = new ConcurrentHashMap<String, IDownloadTask>(); //所有加载的任务
@@ -164,12 +147,12 @@ public class DownloadService extends Service implements SingleDownloadTask.Downl
                 taskHashMap.put(baseEntity.getKey(), task);
             }
             if (baseEntity instanceof MultiDownloadEntity) {
-                task = new MultiDownloadTask((MultiDownloadEntity) baseEntity, executor, this);
+                task = new MultiDownloadTask((MultiDownloadEntity) baseEntity, DownloadManager.getInstance().getExecutor(), this);
                 taskHashMap.put(baseEntity.getKey(), task);
             }
 
         }
-        executor.submit(task);
+        DownloadManager.getInstance().getExecutor().submit(task);
     }
 
     @Override

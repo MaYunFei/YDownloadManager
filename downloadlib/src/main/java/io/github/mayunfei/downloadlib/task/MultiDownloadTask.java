@@ -17,7 +17,7 @@ import io.github.mayunfei.downloadlib.utils.Constants;
  * Created by mayunfei on 17-8-15.
  */
 
-public class MultiDownloadTask implements IDownloadTask, SingleDownloadTask.DownloadTaskListener {
+public class MultiDownloadTask implements IDownloadTask,SingleDownloadTask.DownloadTaskListener {
 
     private static final String TAG = "MultiDownloadTask";
     private final ExecutorService executor;

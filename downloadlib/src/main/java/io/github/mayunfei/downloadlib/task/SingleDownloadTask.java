@@ -4,7 +4,9 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.ConnectException;
 import java.net.ProtocolException;
 import java.net.SocketException;
@@ -35,7 +37,7 @@ import static io.github.mayunfei.downloadlib.utils.Utils.getFileNameFromUrl;
  * Created by mayunfei on 17-7-26.
  */
 
-public class SingleDownloadTask implements Runnable, IDownloadTask, ProgressListener {
+public class SingleDownloadTask implements IDownloadTask, ProgressListener {
     private static final String TAG = "SingleDownloadTask";
     private SingleDownloadEntity entity;
     private volatile boolean isPause;
@@ -59,29 +61,44 @@ public class SingleDownloadTask implements Runnable, IDownloadTask, ProgressList
     @Override
     public void start() {
         Log.d(TAG, " start retry = " + retryCount + "  " + entity.getUrl());
-        entity.status = DownloadEvent.DOWNLOADING;
-        String url = entity.getUrl();
-        OkHttpClient okHttpClient = DownloadManager.getInstance().getOkHttpClient();
-        Request request = new Request.Builder().url(url).build();
-        mCall = okHttpClient.newCall(request);
-        String path = entity.getPath();
-        File file = new File(path);
-        if (!file.exists()) {
-            file.mkdirs();
-        }
         BufferedSink sink = null;
         BufferedSource source = null;
         try {
+            String path = entity.getPath();
+            File fileDir = new File(path);
+            if (!fileDir.exists()) {
+                fileDir.mkdirs();
+            }
+
+            entity.status = DownloadEvent.DOWNLOADING;
+
+            String url = entity.getUrl();
+
+            if (TextUtils.isEmpty(entity.name)) {
+                entity.name = getFileNameFromUrl(entity.url);
+            }
+            File downloadedFile = new File(path, entity.name);
+            OkHttpClient okHttpClient = DownloadManager.getInstance().getOkHttpClient();
+            Request request = null;
+            Request.Builder requestBuilder = new Request.Builder().url(url);
+            Log.i(TAG,"downloadedFile length = " + downloadedFile.length() + " currentSize = " + entity.currentSize);
+            if (entity.totalSize > 0 && downloadedFile.exists() && downloadedFile.length() < entity.totalSize && downloadedFile.length() >= entity.currentSize) { //存在并且没下完
+                request = requestBuilder.addHeader("Range", "bytes=" + entity.currentSize + "-" + entity.totalSize).build();
+                RandomAccessFile mAccessFile = new RandomAccessFile(downloadedFile, "rwd");//"rwd"可读，可写
+                mAccessFile.seek(entity.currentSize);//表示从不同的位置写文件
+                sink = Okio.buffer(Okio.sink(new FileOutputStream(mAccessFile.getFD())));
+                Log.i(TAG,"断点续传");
+            } else {
+                Log.i(TAG,"普通");
+                request = requestBuilder.build();
+                sink = Okio.buffer(Okio.sink(downloadedFile));
+            }
+            mCall = okHttpClient.newCall(request);
             Response response = mCall.execute();
             if (response.isSuccessful()) {
                 ResponseBody body = response.body();
                 if (body != null) {
                     entity.totalSize = body.contentLength();
-                    if (TextUtils.isEmpty(entity.name)) {
-                        entity.name = getFileNameFromUrl(entity.url);
-                    }
-                    File downloadedFile = new File(path, entity.name);
-                    sink = Okio.buffer(Okio.sink(downloadedFile));
                     source = new ProgressResponseBody(response.body(), this).source();
                     sink.writeAll(source);
                     sink.flush();
@@ -92,11 +109,13 @@ public class SingleDownloadTask implements Runnable, IDownloadTask, ProgressList
                     Log.e(TAG, "文件未找到 " + entity.getUrl());
                 }
                 Log.e(TAG, "error code " + response.code() + " " + entity.getUrl());
+                entity.status = DownloadEvent.ERROR;
                 downloadListener.onError(entity);
             }
 
         } catch (IOException e) {
-            if (e instanceof StreamResetException) { //取消
+            if (isCancel || isPause)
+            {
                 return;
             }
             if (retry(e)) {
@@ -107,7 +126,7 @@ public class SingleDownloadTask implements Runnable, IDownloadTask, ProgressList
                     return;
                 }
             }
-            Log.e(TAG, e.toString());
+            entity.status = DownloadEvent.ERROR;
             downloadListener.onError(entity);
         } finally {
             Utils.close(sink, source);
@@ -122,7 +141,8 @@ public class SingleDownloadTask implements Runnable, IDownloadTask, ProgressList
     private boolean retry(Exception e) {
         return e instanceof SocketTimeoutException
                 || e instanceof SocketException
-                || e instanceof ProtocolException;
+                || e instanceof ProtocolException
+                || e instanceof StreamResetException;
     }
 
     @Override
@@ -194,16 +214,18 @@ public class SingleDownloadTask implements Runnable, IDownloadTask, ProgressList
         downloadListener.onUpdate(entity);
     }
 
-    public interface DownloadTaskListener {
+    public interface BaseDownloadTaskListener {
         void onUpdate(BaseDownloadEntity entity);
-
-        void onPause(BaseDownloadEntity entity);
 
         void onCancel(BaseDownloadEntity entity);
 
         void onFinish(BaseDownloadEntity entity);
 
         void onError(BaseDownloadEntity entity);
+    }
+
+    public interface DownloadTaskListener extends BaseDownloadTaskListener {
+        void onPause(BaseDownloadEntity entity);
     }
 
 

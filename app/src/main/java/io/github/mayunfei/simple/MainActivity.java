@@ -18,17 +18,23 @@ import io.github.mayunfei.downloadlib.DownloadManager;
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
 import io.github.mayunfei.downloadlib.observer.DataWatcher;
 import io.github.mayunfei.downloadlib.task.BaseDownloadEntity;
+import io.github.mayunfei.downloadlib.task.IBaseDownloadTask;
+import io.github.mayunfei.downloadlib.task.IDownloadTask;
 import io.github.mayunfei.downloadlib.task.MultiDownloadEntity;
 import io.github.mayunfei.downloadlib.task.SingleDownloadEntity;
+import io.github.mayunfei.downloadlib.task.SingleDownloadTask;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "Main";
     private Button downloadBtn;
     private Button btnDao;
+    private Button btnSimple;
+    private Button btn_single;
     private ListView listView;
     private List<TestBean> datas;
     private MainAdapter mainAdapter;
     private TestBean daoTestBean;
+    private SingleDownloadEntity singleDownloadEntity;
 
     DataWatcher watcher = new DataWatcher() {
         @Override
@@ -55,6 +61,36 @@ public class MainActivity extends AppCompatActivity {
                         case DownloadEvent.PAUSE:
                             btnDao.setText("PAUSE");
                             btnDao.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    DownloadManager.getInstance().add(data);
+                                }
+                            });
+                            break;
+                    }
+                }
+            }
+            if (singleDownloadEntity != null) {
+                if (data.equals(singleDownloadEntity)) {
+                    switch (data.getStatus()) {
+                        case DownloadEvent.CANCEL:
+                            break;
+                        case DownloadEvent.DOWNLOADING:
+                            btn_single.setText("DOWNLOADING");
+                            btn_single.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    DownloadManager.getInstance().pause(data);
+                                }
+                            });
+                            break;
+                        case DownloadEvent.ERROR:
+                            break;
+                        case DownloadEvent.FINISH:
+                            break;
+                        case DownloadEvent.PAUSE:
+                            btn_single.setText("PAUSE");
+                            btn_single.setOnClickListener(new View.OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
                                     DownloadManager.getInstance().add(data);
@@ -124,6 +160,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+
     private void setTextAndClickListener(String text, View.OnClickListener listener) {
         downloadBtn.setText(text);
         downloadBtn.setOnClickListener(listener);
@@ -151,6 +188,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         downloadBtn = (Button) findViewById(R.id.down_btn);
         btnDao = (Button) findViewById(R.id.btn_dao);
+        btnSimple = (Button) findViewById(R.id.btn_simple);
+        btn_single = (Button) findViewById(R.id.btn_single);
         listView = (ListView) findViewById(R.id.list_view);
         datas = new ArrayList<>();
         mainAdapter = new MainAdapter(datas);
@@ -170,6 +209,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+        btn_single.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                singleDownloadEntity = new SingleDownloadEntity("key", "http://down.apps.sina.cn/sinasrc/f2/40/39e9780c0ab67c8494247515f6b540f2.apk");
+                DownloadManager.getInstance().add(singleDownloadEntity);
+            }
+        });
+
         BaseDownloadEntity entity = DownloadManager.getInstance().queryDownloadEntity("yunfei" + 1);
         if (entity != null) {
             btnDao.setVisibility(View.VISIBLE);
@@ -186,6 +234,35 @@ public class MainActivity extends AppCompatActivity {
         } else {
             btnDao.setVisibility(View.GONE);
         }
+
+        btnSimple.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                IBaseDownloadTask iDownloadTask = DownloadManager.getInstance().addSimpleTask("http://down.apps.sina.cn/sinasrc/f2/40/39e9780c0ab67c8494247515f6b540f2.apk", new SingleDownloadTask.BaseDownloadTaskListener() {
+                    @Override
+                    public void onUpdate(BaseDownloadEntity entity) {
+                        Log.i(TAG, entity.toString());
+                    }
+
+                    @Override
+                    public void onCancel(BaseDownloadEntity entity) {
+                        Log.i(TAG, entity.toString());
+                    }
+
+                    @Override
+                    public void onFinish(BaseDownloadEntity entity) {
+                        Log.i(TAG, entity.toString());
+                    }
+
+                    @Override
+                    public void onError(BaseDownloadEntity entity) {
+                        Log.i(TAG, entity.toString());
+                    }
+                });
+                iDownloadTask.start();
+            }
+
+        });
 
 
 //        SimpleDownload simpleDownload = DownloadManager.getInstance().simpleDownload("http://down.apps.sina.cn/sinasrc/f2/40/39e9780c0ab67c8494247515f6b540f2.apk", Environment.getExternalStorageDirectory().getAbsolutePath(), "helloworld.apk");

@@ -3,18 +3,29 @@ package io.github.mayunfei.downloadlib;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.File;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.github.mayunfei.downloadlib.dao.DownloadDao;
+import io.github.mayunfei.downloadlib.event.DownloadEvent;
 import io.github.mayunfei.downloadlib.observer.DataChanger;
 import io.github.mayunfei.downloadlib.observer.DataWatcher;
 import io.github.mayunfei.downloadlib.task.BaseDownloadEntity;
+import io.github.mayunfei.downloadlib.task.IBaseDownloadTask;
+import io.github.mayunfei.downloadlib.task.IDownloadTask;
 import io.github.mayunfei.downloadlib.task.MultiDownloadEntity;
 import io.github.mayunfei.downloadlib.task.SingleDownloadEntity;
+import io.github.mayunfei.downloadlib.task.SingleDownloadTask;
 import io.github.mayunfei.downloadlib.utils.Constants;
+import io.github.mayunfei.downloadlib.utils.Utils;
 import okhttp3.OkHttpClient;
 
 /**
@@ -23,10 +34,33 @@ import okhttp3.OkHttpClient;
  */
 
 public class DownloadManager {
+    private static final String TAG = "DownloadManager";
     private static DownloadManager INSTANCE;
     private OkHttpClient okHttpClient;
     private Context context;
     private String path;
+
+    private ExecutorService executor = Executors.newCachedThreadPool(new ThreadFactory() {
+        private AtomicInteger count = new AtomicInteger();
+
+        @Override
+        public Thread newThread(@NonNull final Runnable r) {
+            final int c = count.incrementAndGet();
+            Log.i(TAG, "new Thread ++++ " + c + "    ");
+            return new Thread(new Runnable() {
+                @Override
+                public void run() {
+//                    Log.i(TAG,"start +++ "+c);
+                    r.run();
+//                    Log.i(TAG,"end +++ "+c);
+                }
+            }, "download thread " + c);
+        }
+    });
+
+    public ExecutorService getExecutor() {
+        return executor;
+    }
 
     private DownloadManager() {
         path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "YUNFEI";
@@ -77,7 +111,7 @@ public class DownloadManager {
     public void add(BaseDownloadEntity downloadEntity) {
         if (TextUtils.isEmpty(downloadEntity.getPath())) {
             //TODO 是否要配置呢
-            downloadEntity.setPath(path + File.separator + downloadEntity.getKey());
+            downloadEntity.setPath(path + File.separator + Utils.encryptMD5ToString(downloadEntity.getKey()));
         }
         if (downloadEntity instanceof MultiDownloadEntity) {
             for (SingleDownloadEntity singleDownloadEntity : ((MultiDownloadEntity) downloadEntity).getDownloadEntities()) {
@@ -115,10 +149,6 @@ public class DownloadManager {
     }
 
 
-//    public Flowable<DownloadEvent> getDownloadProcessor(String key) {
-//        return DownloadProcessor.getInstance().getDownloadProcessor(key).onBackpressureLatest();
-//    }
-
     public void addObserver(DataWatcher dataWatcher) {
         DataChanger.getInstance().addObserver(dataWatcher);
     }
@@ -130,4 +160,82 @@ public class DownloadManager {
     public BaseDownloadEntity queryDownloadEntity(String key) {
         return DownloadDao.getInstance().query(key);
     }
+
+
+    /**
+     * 仅仅是下载
+     */
+    public IBaseDownloadTask addSimpleTask(final String url, final SingleDownloadTask.BaseDownloadTaskListener listener) {
+        final SingleDownloadEntity entity = new SingleDownloadEntity(url, url);
+        if (TextUtils.isEmpty(entity.getPath())) {
+            //TODO 是否要配置呢
+            entity.setPath(path + File.separator + Utils.encryptMD5ToString(entity.getKey()));
+        }
+        IBaseDownloadTask task = new IBaseDownloadTask() {
+
+            SingleDownloadTask task = new SingleDownloadTask(entity, new SingleDownloadTask.DownloadTaskListener() {
+                @Override
+                public void onUpdate(final BaseDownloadEntity entity) {
+                    DataChanger.getInstance().runOnMainThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            listener.onUpdate(entity);
+                        }
+                    });
+
+                }
+
+                @Override
+                public void onPause(final BaseDownloadEntity entity) {
+                    //不支持暂停
+                }
+
+                @Override
+                public void onCancel(final BaseDownloadEntity entity) {
+                    DataChanger.getInstance().runOnMainThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            listener.onCancel(entity);
+                        }
+                    });
+                    Utils.delete(entity.getPath());
+                }
+
+                @Override
+                public void onFinish(final BaseDownloadEntity entity) {
+                    DataChanger.getInstance().runOnMainThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            listener.onFinish(entity);
+                        }
+                    });
+
+                    DownloadDao.getInstance().delete(entity.getKey());
+                }
+
+                @Override
+                public void onError(final BaseDownloadEntity entity) {
+                    DataChanger.getInstance().runOnMainThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            listener.onError(entity);
+                        }
+                    });
+
+                }
+            });
+
+            @Override
+            public void start() {
+                executor.submit(task);
+            }
+            @Override
+            public void cancel() {
+                task.cancel();
+            }
+        };
+
+        return task;
+    }
+
 }

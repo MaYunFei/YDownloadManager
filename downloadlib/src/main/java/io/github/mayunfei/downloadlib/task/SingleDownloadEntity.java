@@ -16,11 +16,11 @@ public class SingleDownloadEntity extends BaseDownloadEntity implements Serializ
         this.url = url;
     }
 
-    public SingleDownloadEntity(String key, String url,String name) {
-        super(key);
-        this.url = url;
-        this.name = name;
-    }
+//    public SingleDownloadEntity(String key, String url,String name) {
+//        super(key);
+//        this.url = url;
+//        this.name = name;
+//    }
 
     public String getName() {
         return name;
