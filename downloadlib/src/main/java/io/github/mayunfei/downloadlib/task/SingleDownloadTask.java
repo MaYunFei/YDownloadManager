@@ -7,15 +7,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.net.ConnectException;
 import java.net.ProtocolException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 import io.github.mayunfei.downloadlib.DownloadManager;
-import io.github.mayunfei.downloadlib.SimpleDownload;
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
-import io.github.mayunfei.downloadlib.observer.DataChanger;
 import io.github.mayunfei.downloadlib.progress.ProgressListener;
 import io.github.mayunfei.downloadlib.progress.ProgressResponseBody;
 import io.github.mayunfei.downloadlib.utils.Constants;
@@ -51,6 +48,7 @@ public class SingleDownloadTask implements IDownloadTask, ProgressListener {
 
     private Call mCall;
     private int retryCount = 0; //重试的次数
+    private long downloadedSize = 0;//断点续传结点
 
 
     public SingleDownloadTask(SingleDownloadEntity entity, DownloadTaskListener onDownloadListener) {
@@ -63,6 +61,7 @@ public class SingleDownloadTask implements IDownloadTask, ProgressListener {
         Log.d(TAG, " start retry = " + retryCount + "  " + entity.getUrl());
         BufferedSink sink = null;
         BufferedSource source = null;
+        RandomAccessFile mAccessFile = null;
         try {
             String path = entity.getPath();
             File fileDir = new File(path);
@@ -78,18 +77,24 @@ public class SingleDownloadTask implements IDownloadTask, ProgressListener {
                 entity.name = getFileNameFromUrl(entity.url);
             }
             File downloadedFile = new File(path, entity.name);
+
             OkHttpClient okHttpClient = DownloadManager.getInstance().getOkHttpClient();
+
             Request request = null;
+
             Request.Builder requestBuilder = new Request.Builder().url(url);
-            Log.i(TAG,"downloadedFile length = " + downloadedFile.length() + " currentSize = " + entity.currentSize);
+
+            Log.i(TAG, "downloadedFile length = " + downloadedFile.length() + " currentSize = " + entity.currentSize + " total = " + entity.totalSize);
+
             if (entity.totalSize > 0 && downloadedFile.exists() && downloadedFile.length() < entity.totalSize && downloadedFile.length() >= entity.currentSize) { //存在并且没下完
                 request = requestBuilder.addHeader("Range", "bytes=" + entity.currentSize + "-" + entity.totalSize).build();
-                RandomAccessFile mAccessFile = new RandomAccessFile(downloadedFile, "rwd");//"rwd"可读，可写
+                downloadedSize = entity.currentSize;
+                mAccessFile = new RandomAccessFile(downloadedFile, "rwd");//"rwd"可读，可写
                 mAccessFile.seek(entity.currentSize);//表示从不同的位置写文件
                 sink = Okio.buffer(Okio.sink(new FileOutputStream(mAccessFile.getFD())));
-                Log.i(TAG,"断点续传");
+                Log.i(TAG, "断点续传");
             } else {
-                Log.i(TAG,"普通");
+                Log.i(TAG, "普通");
                 request = requestBuilder.build();
                 sink = Okio.buffer(Okio.sink(downloadedFile));
             }
@@ -98,7 +103,7 @@ public class SingleDownloadTask implements IDownloadTask, ProgressListener {
             if (response.isSuccessful()) {
                 ResponseBody body = response.body();
                 if (body != null) {
-                    entity.totalSize = body.contentLength();
+                    entity.totalSize = body.contentLength() + downloadedSize;
                     source = new ProgressResponseBody(response.body(), this).source();
                     sink.writeAll(source);
                     sink.flush();
@@ -114,8 +119,7 @@ public class SingleDownloadTask implements IDownloadTask, ProgressListener {
             }
 
         } catch (IOException e) {
-            if (isCancel || isPause)
-            {
+            if (isCancel || isPause) {
                 return;
             }
             if (retry(e)) {
@@ -129,7 +133,7 @@ public class SingleDownloadTask implements IDownloadTask, ProgressListener {
             entity.status = DownloadEvent.ERROR;
             downloadListener.onError(entity);
         } finally {
-            Utils.close(sink, source);
+            Utils.close(sink, source,mAccessFile);
         }
 
 //        text();  测试用
@@ -162,6 +166,7 @@ public class SingleDownloadTask implements IDownloadTask, ProgressListener {
 
     @Override
     public void update(long bytesRead, long contentLength, boolean done) {
+        Log.i(TAG, "bytesRead = " + bytesRead + " contentLength = " + contentLength);
         //暂停 或者取消
         if (isPause || isCancel) {
             if (mCall != null && !mCall.isCanceled()) {
@@ -188,7 +193,7 @@ public class SingleDownloadTask implements IDownloadTask, ProgressListener {
             }
             long updateBytes = bytesRead - lastBytesWritten;
             final long networkSpeed = updateBytes / intervalTime;
-            Log.i(TAG, entity.getKey() + " speed = " + networkSpeed + "  updateBytes = " + updateBytes + "  time = " + intervalTime);
+//            Log.i(TAG, entity.getKey() + " speed = " + networkSpeed + "  updateBytes = " + updateBytes + "  time = " + intervalTime);
             update(bytesRead, contentLength, networkSpeed);
             entity.speed = networkSpeed;
 
@@ -203,13 +208,13 @@ public class SingleDownloadTask implements IDownloadTask, ProgressListener {
 
     private void finished(long bytesRead, long contentLength) {
         entity.status = DownloadEvent.FINISH;
-        entity.currentSize = bytesRead;
+        entity.currentSize = bytesRead + downloadedSize;
         downloadListener.onFinish(entity);
     }
 
     private void update(long bytesRead, long contentLength, float speed) {
         entity.status = DownloadEvent.DOWNLOADING;
-        entity.currentSize = bytesRead;
+        entity.currentSize = bytesRead + downloadedSize;
         entity.speed = speed;
         downloadListener.onUpdate(entity);
     }

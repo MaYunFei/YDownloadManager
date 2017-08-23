@@ -117,7 +117,8 @@ public class DownloadService extends Service implements SingleDownloadTask.Downl
         if (iDownloadTask != null) {
             iDownloadTask.cancel();
         } else {
-            //等待队列
+            // TODO 等待队列 直接删除
+            //onCancel(entity);
         }
     }
 
