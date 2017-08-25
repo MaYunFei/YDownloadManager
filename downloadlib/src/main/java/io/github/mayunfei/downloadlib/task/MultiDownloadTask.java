@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.github.mayunfei.downloadlib.dao.DownloadDao;
 import io.github.mayunfei.downloadlib.event.DownloadEvent;
 import io.github.mayunfei.downloadlib.utils.Constants;
 
@@ -124,12 +125,18 @@ public class MultiDownloadTask implements IDownloadTask,SingleDownloadTask.Downl
     @Override
     public void onUpdate(BaseDownloadEntity entity) {
         //TODO 更新速度 更新时间问题
+        if (entity instanceof SingleDownloadEntity){
+            DownloadDao.getInstance().updateMultiPartTable((SingleDownloadEntity) entity);
+        }
         speedMap.put(entity.getKey(), entity.speed);
     }
 
     @Override
     public void onPause(BaseDownloadEntity entity) {
         //全部pause
+        if (entity instanceof SingleDownloadEntity){
+            DownloadDao.getInstance().updateMultiPartTable((SingleDownloadEntity) entity);
+        }
         Log.i(TAG, "onPause");
         taskHashMap.remove(entity.getKey());
         speedMap.remove(entity.getKey());
@@ -155,6 +162,9 @@ public class MultiDownloadTask implements IDownloadTask,SingleDownloadTask.Downl
     public void onFinish(BaseDownloadEntity entity) {
         Log.i(TAG, "onUpdate");
         //从队列里去掉
+        if (entity instanceof SingleDownloadEntity){
+            DownloadDao.getInstance().updateMultiPartTable((SingleDownloadEntity) entity);
+        }
         taskHashMap.remove(entity.getKey());
 
         completeSize.incrementAndGet();

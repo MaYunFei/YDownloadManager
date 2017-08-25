@@ -199,7 +199,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
 //                SingleDownloadEntity singleDownloadEntity = new SingleDownloadEntity("key", "http://down.apps.sina.cn/sinasrc/f2/40/39e9780c0ab67c8494247515f6b540f2.apk");
 //                DownloadManager.getInstance().add(singleDownloadEntity);
-                addTest("https://md.dongaocloud.com/2b50/2b53/4ac/cc3/01c3e61cb43e03d9cf2f9428141d7c8d/01c3e61cb43e03d9cf2f9428141d7c8d-", 500, "yunfei" + 1);
+                addTest("https://md.dongaocloud.com/2b50/2b53/4ac/cc3/01c3e61cb43e03d9cf2f9428141d7c8d/01c3e61cb43e03d9cf2f9428141d7c8d-", 200, "yunfei" + 1);
                 addTest("https://md.dongaocloud.com/2b50/2b53/227/736/a1f52ebfa24a75d8cbd0acd290ad2858/a1f52ebfa24a75d8cbd0acd290ad2858-", 100, "yunfei" + 2);
                 addTest("https://md.dongaocloud.com/2b50/2b53/e8a/d9b/bcefb3996739c9a6f0293d0d9599d4d9/bcefb3996739c9a6f0293d0d9599d4d9-", 226, "yunfei" + 3);
                 addTest("https://md.dongaocloud.com/2b50/2b53/6dd/2a1/413b8fcf04c48ff475a6e86f958b5e78/413b8fcf04c48ff475a6e86f958b5e78-", 229, "yunfei" + 4);

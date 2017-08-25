@@ -86,18 +86,22 @@ public class SingleDownloadTask implements IDownloadTask, ProgressListener {
 
             Log.i(TAG, "downloadedFile length = " + downloadedFile.length() + " currentSize = " + entity.currentSize + " total = " + entity.totalSize);
 
-            if (entity.totalSize > 0 && downloadedFile.exists() && downloadedFile.length() < entity.totalSize && downloadedFile.length() >= entity.currentSize) { //存在并且没下完
+            if (downloadedFile.length() < entity.currentSize){
+                entity.currentSize = 0;
+            }
+
+//            if (entity.totalSize > 0 && downloadedFile.exists() && downloadedFile.length() < entity.totalSize && downloadedFile.length() >= entity.currentSize) { //存在并且没下完
                 request = requestBuilder.addHeader("Range", "bytes=" + entity.currentSize + "-" + entity.totalSize).build();
                 downloadedSize = entity.currentSize;
                 mAccessFile = new RandomAccessFile(downloadedFile, "rwd");//"rwd"可读，可写
                 mAccessFile.seek(entity.currentSize);//表示从不同的位置写文件
                 sink = Okio.buffer(Okio.sink(new FileOutputStream(mAccessFile.getFD())));
                 Log.i(TAG, "断点续传");
-            } else {
-                Log.i(TAG, "普通");
-                request = requestBuilder.build();
-                sink = Okio.buffer(Okio.sink(downloadedFile));
-            }
+//            } else {
+//                Log.i(TAG, "普通");
+//                request = requestBuilder.build();
+//                sink = Okio.buffer(Okio.sink(downloadedFile));
+//            }
             mCall = okHttpClient.newCall(request);
             Response response = mCall.execute();
             if (response.isSuccessful()) {

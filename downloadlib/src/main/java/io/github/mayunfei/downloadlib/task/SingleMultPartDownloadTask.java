@@ -10,6 +10,7 @@ import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 /**
  * 单个文件多线程range
@@ -38,8 +39,14 @@ public class SingleMultPartDownloadTask implements IDownloadTask, ProgressListen
             try {
                 Response response = call.execute();
                 if (response.isSuccessful()){
-                    long contentLength = response.body().contentLength();
-                    entity.setTotalSize(contentLength);
+                    ResponseBody body = response.body();
+                    if (body!=null){
+                        long contentLength = body.contentLength();
+                        entity.setTotalSize(contentLength);
+                    }else {
+                        entity.status = DownloadEvent.ERROR;
+                        downloadListener.onError(entity);
+                    }
                 }else {
                     entity.status = DownloadEvent.ERROR;
                     downloadListener.onError(entity);

@@ -58,6 +58,13 @@ public class DownloadManager {
         }
     });
 
+    public interface AddDownloadListener {
+
+        void onError();
+
+        void success();
+    }
+
     public ExecutorService getExecutor() {
         return executor;
     }
@@ -229,6 +236,7 @@ public class DownloadManager {
             public void start() {
                 executor.submit(task);
             }
+
             @Override
             public void cancel() {
                 task.cancel();

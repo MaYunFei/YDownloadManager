@@ -181,11 +181,26 @@ public class DownloadDao {
             ContentValues baseContentValues = getBaseContentValues(entity);
             baseContentValues.put(DownloadEntityTable.TYPE, DownloadEntityTable.TYPE_MULTI_DOWNLOAD);
             db.update(DownloadEntityTable.TABLE_NAME, baseContentValues, DownloadEntityTable.KEY + " = ? ", new String[]{entity.getKey()});
-            for (SingleDownloadEntity singleDownloadEntity : entity.getDownloadEntities()) {
-                ContentValues partContentValues = getPartContentValues(singleDownloadEntity);
-                db.update(PartDownloadEntityTable.TABLE_NAME, partContentValues, PartDownloadEntityTable.KEY + " = ?", new String[]{singleDownloadEntity.getKey()});
-            }
+            //TODO 修改为对应的update
+            //将逐个更新 修改为单个MultiTask中
+//            for (SingleDownloadEntity singleDownloadEntity : entity.getDownloadEntities()) {
+//                ContentValues partContentValues = getPartContentValues(singleDownloadEntity);
+//                db.update(PartDownloadEntityTable.TABLE_NAME, partContentValues, PartDownloadEntityTable.KEY + " = ?", new String[]{singleDownloadEntity.getKey()});
+//            }
 
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    public void updateMultiPartTable(SingleDownloadEntity singleDownloadEntity) {
+        SQLiteDatabase db = sqLiteHelper.getWritableDatabase();
+        ContentValues partContentValues = getPartContentValues(singleDownloadEntity);
+        Log.i(TAG,"updatePartTable");
+        try {
+            db.beginTransaction();
+            db.update(PartDownloadEntityTable.TABLE_NAME, partContentValues, PartDownloadEntityTable.KEY + " = ?", new String[]{singleDownloadEntity.getKey()}); //都是一个key
             db.setTransactionSuccessful();
         } finally {
             db.endTransaction();
@@ -210,6 +225,7 @@ public class DownloadDao {
         contentValues.put(PartDownloadEntityTable.TOTAL_SIZE, entity.getTotalSize());
         contentValues.put(PartDownloadEntityTable.CURRENT_SIZE, entity.getCurrentSize());
         contentValues.put(PartDownloadEntityTable.URL, entity.getUrl());
+        contentValues.put(PartDownloadEntityTable.NAME, entity.getName());
         return contentValues;
     }
 
